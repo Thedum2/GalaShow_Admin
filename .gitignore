@@ -11,6 +11,11 @@ yarn.lock
 # production
 /build
 
+# dotenv environment variable files
+.env
+.env.development
+.env.production
+
 # misc
 .eslintcache
 .DS_Store

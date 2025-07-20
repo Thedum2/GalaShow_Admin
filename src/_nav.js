@@ -54,6 +54,12 @@ const _nav = [
   },
   {
     component: CNavItem,
+    name: 'SNS링크 설정',
+    to: '/galashow/sns',
+    icon: <CIcon icon={cilStar} customClassName="nav-icon" />,
+  },
+  {
+    component: CNavItem,
     name: '질문 설정',
     to: '/galashow/question',
     icon: <CIcon icon={cil3d} customClassName="nav-icon" />,
