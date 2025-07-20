@@ -18,6 +18,8 @@ import navigation from '../_nav'
 import Logo from "src/assets/brand/Logo";
 
 const AppSidebar = () => {
+  const MODE = import.meta.env.MODE
+  const isDev = MODE === 'development'
   const dispatch = useDispatch()
   const unfoldable = useSelector((state) => state.sidebarUnfoldable)
   const sidebarShow = useSelector((state) => state.sidebarShow)
@@ -25,7 +27,7 @@ const AppSidebar = () => {
   return (
     <CSidebar
       className="border-end"
-      colorScheme="dark"
+      colorScheme={isDev?'dark':'light'}
       position="fixed"
       unfoldable={unfoldable}
       visible={sidebarShow}
