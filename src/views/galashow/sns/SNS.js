@@ -31,7 +31,26 @@ const SNS = () => {
     setItems([...items, { id }])
     setEdits({
       ...edits,
-      [id]: { icon: null, url: '' },
+      [id]: {
+        title: '',
+        icon: null,
+        url: '',
+        order: items.length + 1,
+      },
+    })
+  }
+
+  const handleTitleChange = (id, value) => {
+    setEdits({
+      ...edits,
+      [id]: { ...(edits[id] || {}), title: value },
+    })
+  }
+
+  const handleOrderChange = (id, value) => {
+    setEdits({
+      ...edits,
+      [id]: { ...(edits[id] || {}), order: parseInt(value, 10) || 0 },
     })
   }
 
@@ -49,18 +68,34 @@ const SNS = () => {
     })
   }
 
-  const saveItem = (id) => {
-    const { icon, url } = edits[id] || {}
-    if (!icon || !url.trim()) return
-    // TODO: API로 업로드/저장 처리
-    console.log(`저장 요청 → id:${id}`, { icon, url })
-    alert(`SNS ${id} 저장:\n아이콘: ${icon.name}\nURL: ${url}`)
-  }
-
   const handleDelete = (id) => {
     setItems(items.filter(item => item.id !== id))
     const { [id]: _, ...rest } = edits
     setEdits(rest)
+  }
+
+  // 모든 항목이 유효한지 검사
+  const isAllValid =
+    items.length > 0 &&
+    items.every(({ id }) => {
+      const e = edits[id] || {}
+      return (
+        e.title?.trim() &&
+        e.icon instanceof File &&
+        e.url?.trim() &&
+        Number.isInteger(e.order) &&
+        e.order > 0
+      )
+    })
+
+  const saveAll = () => {
+    const payload = items.map(({ id }) => {
+      const { title, icon, url, order } = edits[id]
+      return { title, icon, url, order }
+    })
+    // TODO: API에 한번에 보내기 (예: axios.put('/api/sns', payload))
+    console.log('일괄 저장 요청 →', payload)
+    alert('모든 SNS 설정이 저장되었습니다.')
   }
 
   return (
@@ -78,31 +113,65 @@ const SNS = () => {
               size="sm"
               onClick={handleAdd}
               disabled={items.length >= 10}
+              className="me-2"
             >
               항목 추가
+            </CButton>
+            <CButton
+              color="primary"
+              size="sm"
+              onClick={saveAll}
+            >
+              전체 저장
             </CButton>
           </div>
           <CTable hover responsive>
             <CTableHead>
               <CTableRow>
                 <CTableHeaderCell>ID</CTableHeaderCell>
+                <CTableHeaderCell>Title</CTableHeaderCell>
+                <CTableHeaderCell>순서</CTableHeaderCell>
                 <CTableHeaderCell>아이콘 (SVG)</CTableHeaderCell>
                 <CTableHeaderCell>URL</CTableHeaderCell>
-                <CTableHeaderCell>액션</CTableHeaderCell>
+                <CTableHeaderCell>삭제</CTableHeaderCell>
               </CTableRow>
             </CTableHead>
             <CTableBody>
               {items.map(({ id }) => {
-                const { icon = null, url = '' } = edits[id] || {}
-                const isDisabled = !icon || url.trim() === ''
+                const {
+                  title = '',
+                  icon = null,
+                  url = '',
+                  order = id,
+                } = edits[id] || {}
                 return (
                   <CTableRow key={id}>
                     <CTableDataCell>{id}</CTableDataCell>
                     <CTableDataCell>
                       <CFormInput
+                        type="text"
+                        placeholder="SNS 이름"
+                        value={title}
+                        onChange={e =>
+                          handleTitleChange(id, e.target.value)
+                        }
+                      />
+                    </CTableDataCell>
+                    <CTableDataCell style={{ width: '80px' }}>
+                      <CFormInput
+                        type="number"
+                        min="1"
+                        value={order}
+                        onChange={e =>
+                          handleOrderChange(id, e.target.value)
+                        }
+                      />
+                    </CTableDataCell>
+                    <CTableDataCell>
+                      <CFormInput
                         type="file"
                         accept=".svg"
-                        onChange={(e) =>
+                        onChange={e =>
                           handleFileChange(id, e.target.files[0] || null)
                         }
                       />
@@ -112,19 +181,10 @@ const SNS = () => {
                         type="text"
                         placeholder="https://..."
                         value={url}
-                        onChange={(e) => handleUrlChange(id, e.target.value)}
+                        onChange={e => handleUrlChange(id, e.target.value)}
                       />
                     </CTableDataCell>
                     <CTableDataCell>
-                      <CButton
-                        color="primary"
-                        size="sm"
-                        className="me-2"
-                        onClick={() => saveItem(id)}
-                        disabled={isDisabled}
-                      >
-                        저장
-                      </CButton>
                       <CButton
                         color="danger"
                         size="sm"
