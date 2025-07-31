@@ -13,7 +13,7 @@ yarn.lock
 
 # dotenv environment variable files
 .env
-.env.development
+.env.dev
 .env.production
 
 # misc
@@ -21,7 +21,7 @@ yarn.lock
 .DS_Store
 .idea
 .env.local
-.env.development.local
+.env.dev.local
 .env.test.local
 .env.production.local
 

@@ -18,8 +18,8 @@ import navigation from '../_nav'
 import Logo from "src/assets/brand/Logo";
 
 const AppSidebar = () => {
-  const MODE = import.meta.env.MODE
-  const isDev = MODE === 'development'
+  const serverMode = import.meta.env.VITE_MODE
+  const isDev = serverMode === 'development'
   const dispatch = useDispatch()
   const unfoldable = useSelector((state) => state.sidebarUnfoldable)
   const sidebarShow = useSelector((state) => state.sidebarShow)

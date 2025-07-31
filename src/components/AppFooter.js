@@ -1,8 +1,8 @@
 ﻿import React from 'react'
 import {CFooter} from '@coreui/react'
 
-const MODE = import.meta.env.MODE
-const isDev = MODE === 'development'
+const serverMode = import.meta.env.VITE_MODE
+const isDev = serverMode === 'development'
 
 const AppFooter = () => {
 
