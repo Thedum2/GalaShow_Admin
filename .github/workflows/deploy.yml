@@ -1,0 +1,70 @@
+﻿name: Deploy React App to S3
+
+on:
+  push:
+    branches:
+      - main       # production
+      - develop    # development
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_REGION: ap-northeast-2
+      PROD_BUCKET: ${{ secrets.S3_BUCKET_PROD }}
+      DEV_BUCKET: ${{ secrets.S3_BUCKET_DEV }}
+      PROD_URL: ${{ secrets.VITE_API_URL_PROD }}
+      DEV_URL: ${{ secrets.VITE_API_URL_DEV }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate .env file
+        run: |
+          if [ "${GITHUB_REF##*/}" = "main" ]; then
+            echo "VITE_API_URL=$PROD_URL" >> .env.production
+            echo "VITE_MODE=production" >> .env.production
+          else
+            echo "VITE_API_URL=$DEV_URL" >> .env.development
+            echo "VITE_MODE=development" >> .env.development
+          fi
+
+      - name: Build project
+        run: |
+          if [ "${GITHUB_REF##*/}" = "main" ]; then
+            npm run build -- --mode production
+          else
+            npm run build -- --mode development
+          fi
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Deploy to S3
+        run: |
+          TARGET_BUCKET=$([[ "${GITHUB_REF##*/}" = "main" ]] && echo $PROD_BUCKET || echo $DEV_BUCKET)
+          aws s3 sync dist/ s3://$TARGET_BUCKET --delete
+
+      - name: Invalidate CloudFront cache (optional)
+        run: |
+          [[ "${GITHUB_REF##*/}" = "main" ]] && \
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ secrets.DISTRIBUTION_ID_PROD }} \
+            --paths "/*" || \
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ secrets.DISTRIBUTION_ID_DEV }} \
+            --paths "/*"
