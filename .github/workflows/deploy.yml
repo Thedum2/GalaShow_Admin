@@ -1,10 +1,20 @@
-﻿name: Deploy React App to S3
+﻿name: Deploy Galashow admin to S3
 
 on:
-  push:
-    branches:
-      - main       # production
-      - develop    # development
+  workflow_dispatch:
+    inputs:
+      stage:
+        description: "Deploy Stage
+        required: true
+        default: "dev"
+        type: choice
+        options:
+          - dev
+          - prod
+      branch:
+        description: "Branch to deploy (e.g. main or develop)"
+        required: true
+        default: "develop"
 
 jobs:
   deploy:
@@ -12,14 +22,12 @@ jobs:
 
     env:
       AWS_REGION: ap-northeast-2
-      PROD_BUCKET: ${{ secrets.S3_BUCKET_PROD }}
-      DEV_BUCKET: ${{ secrets.S3_BUCKET_DEV }}
-      PROD_URL: ${{ secrets.VITE_API_URL_PROD }}
-      DEV_URL: ${{ secrets.VITE_API_URL_DEV }}
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.branch }}
 
       - name: Setup Node
         uses: actions/setup-node@v3
@@ -31,17 +39,17 @@ jobs:
 
       - name: Generate .env file
         run: |
-          if [ "${GITHUB_REF##*/}" = "main" ]; then
-            echo "VITE_API_URL=$PROD_URL" >> .env.production
+          if [ "${{ inputs.stage }}" = "prod" ]; then
+            echo "VITE_API_URL=${{ secrets.VITE_API_URL_PROD }}" >> .env.production
             echo "VITE_MODE=production" >> .env.production
           else
-            echo "VITE_API_URL=$DEV_URL" >> .env.development
+            echo "VITE_API_URL=${{ secrets.VITE_API_URL_DEV }}" >> .env.development
             echo "VITE_MODE=development" >> .env.development
           fi
 
       - name: Build project
         run: |
-          if [ "${GITHUB_REF##*/}" = "main" ]; then
+          if [ "${{ inputs.stage }}" = "prod" ]; then
             npm run build -- --mode production
           else
             npm run build -- --mode development
@@ -56,15 +64,20 @@ jobs:
 
       - name: Deploy to S3
         run: |
-          TARGET_BUCKET=$([[ "${GITHUB_REF##*/}" = "main" ]] && echo $PROD_BUCKET || echo $DEV_BUCKET)
-          aws s3 sync dist/ s3://$TARGET_BUCKET --delete
+          if [ "${{ inputs.stage }}" = "prod" ]; then
+            aws s3 sync dist/ s3://${{ secrets.S3_BUCKET_PROD }} --delete
+          else
+            aws s3 sync dist/ s3://${{ secrets.S3_BUCKET_DEV }} --delete
+          fi
 
-      - name: Invalidate CloudFront cache (optional)
+      - name: Invalidate CloudFront cache
         run: |
-          [[ "${GITHUB_REF##*/}" = "main" ]] && \
-          aws cloudfront create-invalidation \
-            --distribution-id ${{ secrets.DISTRIBUTION_ID_PROD }} \
-            --paths "/*" || \
-          aws cloudfront create-invalidation \
-            --distribution-id ${{ secrets.DISTRIBUTION_ID_DEV }} \
-            --paths "/*"
+          if [ "${{ inputs.stage }}" = "prod" ]; then
+            aws cloudfront create-invalidation \
+              --distribution-id ${{ secrets.DISTRIBUTION_ID_PROD }} \
+              --paths "/*"
+          else
+            aws cloudfront create-invalidation \
+              --distribution-id ${{ secrets.DISTRIBUTION_ID_DEV }} \
+              --paths "/*"
+          fi
