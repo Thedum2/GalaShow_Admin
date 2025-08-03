@@ -11,10 +11,6 @@ on:
         options:
           - dev
           - prod
-      branch:
-        description: "Branch to deploy (e.g. main or develop)"
-        required: true
-        default: "develop"
 
 jobs:
   deploy:
