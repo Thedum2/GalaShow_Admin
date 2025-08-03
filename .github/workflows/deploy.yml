@@ -61,9 +61,9 @@ jobs:
       - name: Deploy to S3
         run: |
           if [ "${{ inputs.stage }}" = "prod" ]; then
-            aws s3 sync dist/ s3://${{ secrets.S3_BUCKET_PROD }} --delete
+            aws s3 sync build s3://${{ secrets.S3_BUCKET_PROD }} --delete
           else
-            aws s3 sync dist/ s3://${{ secrets.S3_BUCKET_DEV }} --delete
+            aws s3 sync build s3://${{ secrets.S3_BUCKET_DEV }} --delete
           fi
 
       - name: Invalidate CloudFront cache
