@@ -15,10 +15,11 @@ const AppFooter = () => {
         Galashow Admin &copy; {new Date().getFullYear()}
       </div>
       <div className="d-flex align-items-center">
-        <span className="me-2">Current Server:</span>
+        <span className="me-2">Current Server is [</span>
         <h3 style={{color, fontWeight: weight}}>
           {isDev ? 'DEV' : 'LIVE'}
         </h3>
+        <span className="me-2">]</span>
 
       </div>
     </CFooter>
