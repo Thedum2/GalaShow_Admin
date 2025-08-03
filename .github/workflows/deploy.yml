@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       stage:
-        description: "Deploy Stage
+        description: "Deploy Stage"
         required: true
         default: "dev"
         type: choice
