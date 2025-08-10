@@ -16,19 +16,20 @@ import {
 } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
 import { cilLockLocked, cilUser } from '@coreui/icons'
-
-import { login } from 'src/api/modules/auth'
 import {isDev} from "src/lib/env";
 
+import { login as loginApi } from 'src/api/modules/auth';
+import { useAuth } from 'src/auth/AuthContext';
+import { getAccessToken } from 'src/api/tokenStorage';
 
 const Login = () => {
+  const { login: setAuthed } = useAuth();
   const [idOrEmail, setIdOrEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
 
-  const nextPath ='/dashboard';
   const color = isDev ? 'purple' : 'red'
   const weight = '1000'
   const handleSubmit = async (e) => {
@@ -41,9 +42,10 @@ const Login = () => {
     }
 
     try {
-      setLoading(true)
-      await login({ id: idOrEmail, email: idOrEmail, password });
-      navigate(nextPath, { replace: true });
+      setLoading(true);
+      await loginApi({ id: idOrEmail, email: idOrEmail, password });
+      setAuthed(getAccessToken());
+      navigate('/dashboard', { replace: true });
     } catch (err) {
       const msg =
         err?.response?.data?.message ||
@@ -96,9 +98,6 @@ const Login = () => {
                         autoComplete="current-password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') handleSubmit()
-                        }}
                         disabled={loading}
                       />
                     </CInputGroup>

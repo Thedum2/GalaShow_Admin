@@ -18,9 +18,10 @@ export function AuthProvider({ children }) {
   }, []);
 
   const login = (token) => {
-    localStorage.setItem('accessToken', token);
+    if (token) localStorage.setItem('accessToken', token);
     setIsAuthed(true);
   };
+
   const logout = () => {
     localStorage.removeItem('accessToken');
     setIsAuthed(false);
