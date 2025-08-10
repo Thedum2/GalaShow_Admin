@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import {useLocation, useNavigate} from 'react-router-dom'
 import {
   CAlert,
   CButton,
@@ -28,7 +28,8 @@ const Login = () => {
   const navigate = useNavigate()
 
 
-  const nextPath = '/dashboard'
+  const location = useLocation();
+  const nextPath = location.state?.from?.pathname || '/dashboard';
   const serverMode = import.meta.env.VITE_MODE
   const isDev = serverMode === 'development'
   const color = isDev ? 'purple' : 'red'
@@ -44,8 +45,8 @@ const Login = () => {
 
     try {
       setLoading(true)
-      await login({ id: idOrEmail, email: idOrEmail, password })
-      navigate(nextPath, { replace: true })
+      await login({ id: idOrEmail, email: idOrEmail, password });
+      navigate(nextPath, { replace: true });
     } catch (err) {
       const msg =
         err?.response?.data?.message ||

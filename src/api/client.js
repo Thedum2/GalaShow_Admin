@@ -14,7 +14,7 @@ export const api = axios.create({
   timeout: 15000,
 });
 
-const AUTH_WHITELIST = ['/auth/login', '/auth/refresh', '/auth/logout'];
+const AUTH_WHITELIST = ['/login'];
 
 api.interceptors.request.use((config) => {
   const skip = AUTH_WHITELIST.some((p) => config.url?.includes(p));
@@ -86,12 +86,7 @@ api.interceptors.response.use(
       isRefreshing = false;
       queue = [];
 
-      // 토큰 정리 후 로그인으로 유도(원래 경로 보존)
       clearTokens();
-      const current = window.location.pathname + window.location.search;
-      if (!window.location.pathname.startsWith('/login')) {
-        window.location.href = `/login?next=${encodeURIComponent(current)}`;
-      }
       return Promise.reject(e);
     }
   }
