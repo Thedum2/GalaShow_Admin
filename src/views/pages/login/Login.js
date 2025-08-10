@@ -17,7 +17,8 @@ import {
 import CIcon from '@coreui/icons-react'
 import { cilLockLocked, cilUser } from '@coreui/icons'
 
-import { login } from '../../../api/modules/auth'
+import { login } from 'src/api/modules/auth'
+import {isDev} from "src/lib/env";
 
 
 const Login = () => {
@@ -30,8 +31,6 @@ const Login = () => {
 
   const location = useLocation();
   const nextPath = location.state?.from?.pathname || '/dashboard';
-  const serverMode = import.meta.env.VITE_MODE
-  const isDev = serverMode === 'development'
   const color = isDev ? 'purple' : 'red'
   const weight = '1000'
   const handleSubmit = async (e) => {

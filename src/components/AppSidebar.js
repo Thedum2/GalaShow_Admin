@@ -13,13 +13,11 @@ import CIcon from '@coreui/icons-react'
 
 import {AppSidebarNav} from './AppSidebarNav'
 
-// sidebar nav config
 import navigation from '../_nav'
 import Logo from "src/assets/brand/Logo";
+import {isDev} from "src/lib/env";
 
 const AppSidebar = () => {
-  const serverMode = import.meta.env.VITE_MODE
-  const isDev = serverMode === 'development'
   const dispatch = useDispatch()
   const unfoldable = useSelector((state) => state.sidebarUnfoldable)
   const sidebarShow = useSelector((state) => state.sidebarShow)
