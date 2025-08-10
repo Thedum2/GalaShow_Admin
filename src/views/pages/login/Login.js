@@ -28,9 +28,7 @@ const Login = () => {
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
 
-
-  const location = useLocation();
-  const nextPath = location.state?.from?.pathname || '/dashboard';
+  const nextPath ='/dashboard';
   const color = isDev ? 'purple' : 'red'
   const weight = '1000'
   const handleSubmit = async (e) => {
