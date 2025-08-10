@@ -64,11 +64,11 @@ const routes = [
   {path: '/', exact: true, name: 'Home'},
   {path: '/dashboard', name: 'Dashboard', element: Dashboard},
 
-  {path: '/galashow/banner', name: 'Banner', element: Banner},
-  {path: '/galashow/background', name: 'Background', element: BackGround},
-  {path: '/galashow/policy', name: 'Policy', element: Policy},
-  {path: '/galashow/sns', name: 'SNS', element: SNS},
-  {path: '/galashow/question', name: 'Question', element: Question},
+  {path: '/banner', name: 'Banner', element: Banner},
+  {path: '/background', name: 'Background', element: BackGround},
+  {path: '/policy', name: 'Policy', element: Policy},
+  {path: '/sns', name: 'SNS', element: SNS},
+  {path: '/question', name: 'Question', element: Question},
 
 
   {path: '/theme', name: 'Theme', element: Colors, exact: true},
