@@ -13,10 +13,14 @@
   "license": "MIT",
   "author": "The CoreUI Team (https://github.com/orgs/coreui/people)",
   "scripts": {
-    "build": "vite build",
-    "lint": "eslint",
-    "serve": "vite preview",
-    "start": "vite"
+    "dev": "vite --mode dev",
+    "start": "vite --mode dev",
+    "start:prod": "vite build --mode production && vite preview --mode production",
+    "build": "vite build --mode production",
+    "build:dev": "vite build --mode dev",
+    "preview": "vite preview --mode production",
+    "serve:dev": "vite preview --mode dev",
+    "lint": "eslint"
   },
   "dependencies": {
     "@coreui/chartjs": "^4.1.0",

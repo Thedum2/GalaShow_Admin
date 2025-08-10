@@ -1,6 +1,7 @@
-import React from 'react'
-import { Link } from 'react-router-dom'
+import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
+  CAlert,
   CButton,
   CCard,
   CCardBody,
@@ -16,7 +17,46 @@ import {
 import CIcon from '@coreui/icons-react'
 import { cilLockLocked, cilUser } from '@coreui/icons'
 
+import { login } from '../../../api/modules/auth'
+
+
 const Login = () => {
+  const [idOrEmail, setIdOrEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState(null)
+  const [loading, setLoading] = useState(false)
+  const navigate = useNavigate()
+
+
+  const nextPath = '/dashboard'
+  const serverMode = import.meta.env.VITE_MODE
+  const isDev = serverMode === 'development'
+  const color = isDev ? 'purple' : 'red'
+  const weight = '1000'
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setError(null)
+
+    if (!idOrEmail || !password) {
+      setError('아이디(또는 이메일)와 비밀번호를 입력하세요.')
+      return
+    }
+
+    try {
+      setLoading(true)
+      await login({ id: idOrEmail, email: idOrEmail, password })
+      navigate(nextPath, { replace: true })
+    } catch (err) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.message ||
+        '로그인에 실패했습니다. 입력 정보를 확인하세요.'
+      setError(msg)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="bg-body-tertiary min-vh-100 d-flex flex-row align-items-center">
       <CContainer>
@@ -25,53 +65,73 @@ const Login = () => {
             <CCardGroup>
               <CCard className="p-4">
                 <CCardBody>
-                  <CForm>
-                    <h1>Login</h1>
-                    <p className="text-body-secondary">Sign In to your account</p>
+                  <CForm onSubmit={handleSubmit}>
+                    <h1>로그인</h1>
+                    <p className="text-body-secondary">로그인 하세요</p>
+
+                    {error && (
+                      <CAlert color="danger" className="mb-3">
+                        {error}
+                      </CAlert>
+                    )}
+
                     <CInputGroup className="mb-3">
                       <CInputGroupText>
                         <CIcon icon={cilUser} />
                       </CInputGroupText>
-                      <CFormInput placeholder="Username" autoComplete="username" />
+                      <CFormInput
+                        placeholder="아이디 또는 이메일"
+                        autoComplete="username"
+                        value={idOrEmail}
+                        onChange={(e) => setIdOrEmail(e.target.value)}
+                        disabled={loading}
+                      />
                     </CInputGroup>
+
                     <CInputGroup className="mb-4">
                       <CInputGroupText>
                         <CIcon icon={cilLockLocked} />
                       </CInputGroupText>
                       <CFormInput
                         type="password"
-                        placeholder="Password"
+                        placeholder="비밀번호"
                         autoComplete="current-password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleSubmit()
+                        }}
+                        disabled={loading}
                       />
                     </CInputGroup>
+
                     <CRow>
                       <CCol xs={6}>
-                        <CButton color="primary" className="px-4">
-                          Login
-                        </CButton>
-                      </CCol>
-                      <CCol xs={6} className="text-right">
-                        <CButton color="link" className="px-0">
-                          Forgot password?
+                        <CButton
+                          color="primary"
+                          className="px-4"
+                          type="submit"
+                          disabled={loading}
+                        >
+                          {loading ? '로그인 중…' : '로그인'}
                         </CButton>
                       </CCol>
                     </CRow>
                   </CForm>
                 </CCardBody>
               </CCard>
-              <CCard className="text-white bg-primary py-5" style={{ width: '44%' }}>
+
+              <CCard className="text-white bg-primary py-5" style={{ width: '50%' }}>
                 <CCardBody className="text-center">
                   <div>
-                    <h2>Sign up</h2>
+                    <h1 style={{color, fontWeight: weight}}>GALASHOW {isDev ? 'DEV' : 'LIVE'} ADMIN</h1>
                     <p>
-                      Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod
-                      tempor incididunt ut labore et dolore magna aliqua.
+                      여기는 갈라쇼 어드민입니다 낄낄
+                      여기는 갈라쇼 어드민입니다 낄낄
+                      여기는 갈라쇼 어드민입니다 낄낄
+                      여기는 갈라쇼 어드민입니다 낄낄
+                      여기는 갈라쇼 어드민입니다 낄낄
                     </p>
-                    <Link to="/register">
-                      <CButton color="primary" className="mt-3" active tabIndex={-1}>
-                        Register Now!
-                      </CButton>
-                    </Link>
                   </div>
                 </CCardBody>
               </CCard>
