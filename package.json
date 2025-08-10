@@ -17,7 +17,7 @@
     "start": "vite --mode dev",
     "start:prod": "vite build --mode production && vite preview --mode production",
     "build": "vite build --mode production",
-    "build:dev": "vite build --mode dev",
+    "build:dev": "vite build --mode development",
     "preview": "vite preview --mode production",
     "serve:dev": "vite preview --mode dev",
     "lint": "eslint"

@@ -39,7 +39,7 @@ jobs:
             echo "VITE_API_URL=${{ secrets.VITE_API_URL_PROD }}" >> .env.production
             echo "VITE_MODE=production" >> .env.production
           else
-            echo "VITE_API_URL=${{ secrets.VITE_API_URL_DEV }}" >> .env.dev
+            echo "VITE_API_URL=${{ secrets.VITE_API_URL_DEV }}" >> .env.development
             echo "VITE_MODE=development" >> .env.development
           fi
 
