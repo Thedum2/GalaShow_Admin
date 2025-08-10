@@ -37,31 +37,31 @@ const _nav = [
   {
     component: CNavItem,
     name: '배너 설정',
-    to: '/galashow/banner',
+    to: '/banner',
     icon: <CIcon icon={cilImage} customClassName="nav-icon" />,
   },
   {
     component: CNavItem,
     name: '배경 이미지/동영상 설정',
-    to: '/galashow/background',
+    to: '/background',
     icon: <CIcon icon={cilBrush} customClassName="nav-icon" />,
   },
   {
     component: CNavItem,
     name: '정책 설정',
-    to: '/galashow/policy',
+    to: '/policy',
     icon: <CIcon icon={cilPencil} customClassName="nav-icon" />,
   },
   {
     component: CNavItem,
     name: 'SNS링크 설정',
-    to: '/galashow/sns',
+    to: '/sns',
     icon: <CIcon icon={cilStar} customClassName="nav-icon" />,
   },
   {
     component: CNavItem,
     name: '질문 설정',
-    to: '/galashow/question',
+    to: '/question',
     icon: <CIcon icon={cil3d} customClassName="nav-icon" />,
   },
 
