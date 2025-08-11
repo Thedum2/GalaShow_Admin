@@ -9,21 +9,21 @@ export const useAuth = () => {
 
 export function AuthProvider({ children }) {
 
-  const [isAuthed, setIsAuthed] = useState(() => Boolean(localStorage.getItem('accessToken')));
+  const [isAuthed, setIsAuthed] = useState(() => Boolean(sessionStorage.getItem('accessToken')));
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    setIsAuthed(Boolean(localStorage.getItem('accessToken')));
+    setIsAuthed(Boolean(sessionStorage.getItem('accessToken')));
     setReady(true);
   }, []);
 
   const login = (token) => {
-    if (token) localStorage.setItem('accessToken', token);
+    if (token) sessionStorage.setItem('accessToken', token);
     setIsAuthed(true);
   };
 
   const logout = () => {
-    localStorage.removeItem('accessToken');
+    sessionStorage.removeItem('accessToken');
     setIsAuthed(false);
   };
 
