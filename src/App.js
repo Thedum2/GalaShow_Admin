@@ -1,8 +1,8 @@
-import React, { Suspense, useEffect } from 'react'
+import React, {Suspense, useEffect} from 'react'
 import {BrowserRouter, HashRouter, Route, Routes} from 'react-router-dom'
-import { useSelector } from 'react-redux'
+import {useSelector} from 'react-redux'
 
-import { CSpinner, useColorModes } from '@coreui/react'
+import {CSpinner, useColorModes} from '@coreui/react'
 import './scss/style.scss'
 
 // We use those styles to show code examples, you should remove them in your application.
@@ -17,7 +17,7 @@ const DefaultLayout = React.lazy(() => import('./layout/DefaultLayout'))
 const Login = React.lazy(() => import('./views/pages/login/Login'))
 
 const App = () => {
-  const { isColorModeSet, setColorMode } = useColorModes('coreui-free-react-admin-template-theme')
+  const {isColorModeSet, setColorMode} = useColorModes('coreui-free-react-admin-template-theme')
   const storedTheme = useSelector((state) => state.theme)
 
   useEffect(() => {
@@ -35,16 +35,16 @@ const App = () => {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-      <BrowserRouter>
-        <AuthProvider>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route element={<RequireAuth />}>
-              <Route path="/*" element={<DefaultLayout />} />
-            </Route>
-          </Routes>
-        </AuthProvider>
-      </BrowserRouter>
+    <BrowserRouter>
+      <AuthProvider>
+        <Routes>
+          <Route path="/login" element={<Login/>}/>
+          <Route element={<RequireAuth/>}>
+            <Route path="/*" element={<DefaultLayout/>}/>
+          </Route>
+        </Routes>
+      </AuthProvider>
+    </BrowserRouter>
   )
 }
 
