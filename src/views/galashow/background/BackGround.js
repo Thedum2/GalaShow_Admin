@@ -48,7 +48,6 @@ function PreviewModal({ visible, target, onClose, onConfirm }) {
               src={url}
               alt="preview"
               style={commonStyle}
-              crossOrigin="anonymous"
               onLoad={() => setOk(true)}
               onError={() => setOk(false)}
             />
@@ -57,7 +56,6 @@ function PreviewModal({ visible, target, onClose, onConfirm }) {
               key={mediaKey}
               src={url}
               style={commonStyle}
-              crossOrigin="anonymous"
               controls
               preload="metadata"
               onCanPlay={() => setOk(true)}
