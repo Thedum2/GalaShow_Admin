@@ -203,6 +203,7 @@ const SNS = () => {
       setSaving(true)
       setShowSave(false)
       const payload = rows.map(({ id }) => ({
+        id: id,
         title: (edits[id]?.title || '').trim(),
         icon_url: (edits[id]?.iconUrl || '').trim(),
         url: (edits[id]?.url || '').trim(),
