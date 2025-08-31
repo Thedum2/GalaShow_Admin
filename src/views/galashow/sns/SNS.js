@@ -48,7 +48,6 @@ function PreviewContent({ target, onResult }) {
             style={{ maxWidth: 240, maxHeight: 240 }}
             onLoad={() => setOk(true)}
             onError={() => setOk(false)}
-            crossOrigin="anonymous"
           />
         </div>
       )}
