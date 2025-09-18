@@ -1,8 +1,23 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import {
-  CContainer, CCard, CCardHeader, CCardBody, CTable, CTableHead, CTableRow,
-  CTableHeaderCell, CTableBody, CTableDataCell, CButton, CSpinner, CModal,
-  CModalHeader, CModalTitle, CModalBody, CModalFooter, CFormInput
+  CContainer,
+  CCard,
+  CCardHeader,
+  CCardBody,
+  CTable,
+  CTableHead,
+  CTableRow,
+  CTableHeaderCell,
+  CTableBody,
+  CTableDataCell,
+  CButton,
+  CSpinner,
+  CModal,
+  CModalHeader,
+  CModalTitle,
+  CModalBody,
+  CModalFooter,
+  CFormInput,
 } from '@coreui/react'
 import { questionCategories, questions } from 'src/api/modules/question'
 
@@ -14,12 +29,12 @@ const Question = () => {
   const [questionsList, setQuestionsList] = useState([])
 
   const [showCategoryModal, setShowCategoryModal] = useState(false)
-  const [editingCategory, setEditingCategory] = useState(null) // null for create, object for edit
+  const [editingCategory, setEditingCategory] = useState(null)
   const [categoryName, setCategoryName] = useState('')
   const [confirmDeleteCategory, setConfirmDeleteCategory] = useState(null)
 
   const [showQuestionModal, setShowQuestionModal] = useState(false)
-  const [editingQuestion, setEditingQuestion] = useState(null) // null for create, object for edit
+  const [editingQuestion, setEditingQuestion] = useState(null)
   const [questionTitle, setQuestionTitle] = useState('')
   const [questionChoices, setQuestionChoices] = useState([{ text: '', imageUrl: '' }])
   const [confirmDeleteQuestion, setConfirmDeleteQuestion] = useState(null)
@@ -119,7 +134,10 @@ const Question = () => {
   const handleQuestionCreateClick = () => {
     setEditingQuestion(null)
     setQuestionTitle('')
-    setQuestionChoices([{ text: '', imageUrl: '' }])
+    setQuestionChoices([
+      { text: '', imageUrl: '' },
+      { text: '', imageUrl: '' },
+    ])
     setShowQuestionModal(true)
   }
 
@@ -129,7 +147,11 @@ const Question = () => {
       const data = await questions.getById(questionId)
       setEditingQuestion(data)
       setQuestionTitle(data.title)
-      setQuestionChoices(data.choices.length > 0 ? data.choices : [{ text: '', imageUrl: '' }])
+      const choices = data.choices.length > 0 ? data.choices : [{ text: '', imageUrl: '' }]
+      while (choices.length < 2) {
+        choices.push({ text: '', imageUrl: '' })
+      }
+      setQuestionChoices(choices)
       setShowQuestionModal(true)
     } catch (e) {
       console.error(e)
@@ -148,21 +170,28 @@ const Question = () => {
       alert('질문 제목을 입력해주세요.')
       return
     }
-    const filteredChoices = questionChoices.filter(choice => choice.text.trim() !== '' || choice.imageUrl.trim() !== '')
-    if (filteredChoices.length === 0) {
-      alert('선택지를 하나 이상 입력해주세요.')
+    const filteredChoices = questionChoices.filter(
+      (choice) => choice.text.trim() !== '' || choice.imageUrl.trim() !== '',
+    )
+    if (filteredChoices.length < 2 || filteredChoices.length > 4) {
+      alert('선택지는 2개 이상, 4개 이하로 입력해주세요.')
       return
     }
 
     setLoading(true)
     try {
-      const choicesPayload = filteredChoices.map(choice => ({
+      const choicesPayload = filteredChoices.map((choice) => ({
         text: choice.text.trim() === '' ? null : choice.text.trim(),
         imageUrl: choice.imageUrl.trim() === '' ? null : choice.imageUrl.trim(),
       }))
 
       if (editingQuestion) {
-        await questions.update(editingQuestion.id, selectedCategoryId, questionTitle, choicesPayload)
+        await questions.update(
+          editingQuestion.id,
+          selectedCategoryId,
+          questionTitle,
+          choicesPayload,
+        )
       } else {
         await questions.create(selectedCategoryId, questionTitle, choicesPayload)
       }
@@ -198,26 +227,47 @@ const Question = () => {
   }
 
   const handleAddChoice = () => {
+    if (questionChoices.length >= 4) {
+      alert('선택지는 최대 4개까지 추가할 수 있습니다.')
+      return
+    }
     setQuestionChoices([...questionChoices, { text: '', imageUrl: '' }])
   }
 
   const handleRemoveChoice = (index) => {
+    if (questionChoices.length <= 2) {
+      alert('선택지는 최소 2개 이상이어야 합니다.')
+      return
+    }
     const newChoices = questionChoices.filter((_, i) => i !== index)
-    setQuestionChoices(newChoices.length > 0 ? newChoices : [{ text: '', imageUrl: '' }])
+    setQuestionChoices(newChoices)
   }
 
   return (
     <>
       {/* Error Modal */}
       <CModal visible={!!error} onClose={() => setError(null)} backdrop="static" keyboard>
-        <CModalHeader><CModalTitle>오류</CModalTitle></CModalHeader>
+        <CModalHeader>
+          <CModalTitle>오류</CModalTitle>
+        </CModalHeader>
         <CModalBody>{error}</CModalBody>
-        <CModalFooter><CButton color="primary" onClick={() => setError(null)}>확인</CButton></CModalFooter>
+        <CModalFooter>
+          <CButton color="primary" onClick={() => setError(null)}>
+            확인
+          </CButton>
+        </CModalFooter>
       </CModal>
 
       {/* Category Modal */}
-      <CModal visible={showCategoryModal} onClose={() => setShowCategoryModal(false)} backdrop="static" keyboard>
-        <CModalHeader><CModalTitle>{editingCategory ? '카테고리 수정' : '새 카테고리 생성'}</CModalTitle></CModalHeader>
+      <CModal
+        visible={showCategoryModal}
+        onClose={() => setShowCategoryModal(false)}
+        backdrop="static"
+        keyboard
+      >
+        <CModalHeader>
+          <CModalTitle>{editingCategory ? '카테고리 수정' : '새 카테고리 생성'}</CModalTitle>
+        </CModalHeader>
         <CModalBody>
           <CFormInput
             type="text"
@@ -227,26 +277,54 @@ const Question = () => {
           />
         </CModalBody>
         <CModalFooter>
-          <CButton color="secondary" variant="outline" onClick={() => setShowCategoryModal(false)}>취소</CButton>
-          <CButton color="primary" onClick={handleCategorySave} disabled={loading}>저장</CButton>
+          <CButton color="secondary" variant="outline" onClick={() => setShowCategoryModal(false)}>
+            취소
+          </CButton>
+          <CButton color="primary" onClick={handleCategorySave} disabled={loading}>
+            저장
+          </CButton>
         </CModalFooter>
       </CModal>
 
       {/* Confirm Delete Category Modal */}
-      <CModal visible={!!confirmDeleteCategory} onClose={() => setConfirmDeleteCategory(null)} backdrop="static" keyboard>
-        <CModalHeader><CModalTitle>카테고리 삭제 확인</CModalTitle></CModalHeader>
+      <CModal
+        visible={!!confirmDeleteCategory}
+        onClose={() => setConfirmDeleteCategory(null)}
+        backdrop="static"
+        keyboard
+      >
+        <CModalHeader>
+          <CModalTitle>카테고리 삭제 확인</CModalTitle>
+        </CModalHeader>
         <CModalBody>
-          '{confirmDeleteCategory?.name}' 카테고리를 정말 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
+          '{confirmDeleteCategory?.name}' 카테고리를 정말 삭제하시겠습니까? 이 작업은 되돌릴 수
+          없습니다.
         </CModalBody>
         <CModalFooter>
-          <CButton color="secondary" variant="outline" onClick={() => setConfirmDeleteCategory(null)}>취소</CButton>
-          <CButton color="danger" onClick={handleCategoryDelete} disabled={loading}>삭제</CButton>
+          <CButton
+            color="secondary"
+            variant="outline"
+            onClick={() => setConfirmDeleteCategory(null)}
+          >
+            취소
+          </CButton>
+          <CButton color="danger" onClick={handleCategoryDelete} disabled={loading}>
+            삭제
+          </CButton>
         </CModalFooter>
       </CModal>
 
       {/* Question Modal */}
-      <CModal visible={showQuestionModal} onClose={() => setShowQuestionModal(false)} backdrop="static" keyboard size="lg">
-        <CModalHeader><CModalTitle>{editingQuestion ? '질문 수정' : '새 질문 생성'}</CModalTitle></CModalHeader>
+      <CModal
+        visible={showQuestionModal}
+        onClose={() => setShowQuestionModal(false)}
+        backdrop="static"
+        keyboard
+        size="lg"
+      >
+        <CModalHeader>
+          <CModalTitle>{editingQuestion ? '질문 수정' : '새 질문 생성'}</CModalTitle>
+        </CModalHeader>
         <CModalBody>
           <div className="mb-3">
             <label className="form-label">질문 제목</label>
@@ -280,24 +358,46 @@ const Question = () => {
                 </CButton>
               </div>
             ))}
-            <CButton color="success" variant="outline" onClick={handleAddChoice}>선택지 추가</CButton>
+            <CButton color="success" variant="outline" onClick={handleAddChoice}>
+              선택지 추가
+            </CButton>
           </div>
         </CModalBody>
         <CModalFooter>
-          <CButton color="secondary" variant="outline" onClick={() => setShowQuestionModal(false)}>취소</CButton>
-          <CButton color="primary" onClick={handleQuestionSave} disabled={loading}>저장</CButton>
+          <CButton color="secondary" variant="outline" onClick={() => setShowQuestionModal(false)}>
+            취소
+          </CButton>
+          <CButton color="primary" onClick={handleQuestionSave} disabled={loading}>
+            저장
+          </CButton>
         </CModalFooter>
       </CModal>
 
       {/* Confirm Delete Question Modal */}
-      <CModal visible={!!confirmDeleteQuestion} onClose={() => setConfirmDeleteQuestion(null)} backdrop="static" keyboard>
-        <CModalHeader><CModalTitle>질문 삭제 확인</CModalTitle></CModalHeader>
+      <CModal
+        visible={!!confirmDeleteQuestion}
+        onClose={() => setConfirmDeleteQuestion(null)}
+        backdrop="static"
+        keyboard
+      >
+        <CModalHeader>
+          <CModalTitle>질문 삭제 확인</CModalTitle>
+        </CModalHeader>
         <CModalBody>
-          '{confirmDeleteQuestion?.title}' 질문을 정말 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
+          '{confirmDeleteQuestion?.title}' 질문을 정말 삭제하시겠습니까? 이 작업은 되돌릴 수
+          없습니다.
         </CModalBody>
         <CModalFooter>
-          <CButton color="secondary" variant="outline" onClick={() => setConfirmDeleteQuestion(null)}>취소</CButton>
-          <CButton color="danger" onClick={handleQuestionDelete} disabled={loading}>삭제</CButton>
+          <CButton
+            color="secondary"
+            variant="outline"
+            onClick={() => setConfirmDeleteQuestion(null)}
+          >
+            취소
+          </CButton>
+          <CButton color="danger" onClick={handleQuestionDelete} disabled={loading}>
+            삭제
+          </CButton>
         </CModalFooter>
       </CModal>
 
@@ -305,7 +405,9 @@ const Question = () => {
         <CCard className="mb-4">
           <CCardHeader>
             <div className="d-flex align-items-center justify-content-between" style={{ gap: 12 }}>
-              <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>질문 카테고리 관리</h2>
+              <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>
+                질문 카테고리 관리
+              </h2>
               <CButton color="primary" size="sm" onClick={handleCategoryCreateClick}>
                 새 카테고리 추가
               </CButton>
@@ -340,19 +442,27 @@ const Question = () => {
                       <CTableDataCell>{category.name}</CTableDataCell>
                       <CTableDataCell>
                         <CButton
-                          color="info" variant="outline" size="sm" className="me-2"
+                          color="info"
+                          variant="outline"
+                          size="sm"
+                          className="me-2"
                           onClick={() => setSelectedCategoryId(category.id)}
                         >
                           선택
                         </CButton>
                         <CButton
-                          color="warning" variant="outline" size="sm" className="me-2"
+                          color="warning"
+                          variant="outline"
+                          size="sm"
+                          className="me-2"
                           onClick={() => handleCategoryEditClick(category)}
                         >
                           수정
                         </CButton>
                         <CButton
-                          color="danger" variant="outline" size="sm"
+                          color="danger"
+                          variant="outline"
+                          size="sm"
                           onClick={() => setConfirmDeleteCategory(category)}
                         >
                           삭제
@@ -369,7 +479,10 @@ const Question = () => {
         {selectedCategoryId && (
           <CCard>
             <CCardHeader>
-              <div className="d-flex align-items-center justify-content-between" style={{ gap: 12 }}>
+              <div
+                className="d-flex align-items-center justify-content-between"
+                style={{ gap: 12 }}
+              >
                 <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>
                   선택된 카테고리 질문 관리 (ID: {selectedCategoryId})
                 </h2>
@@ -407,13 +520,18 @@ const Question = () => {
                         <CTableDataCell>{question.title}</CTableDataCell>
                         <CTableDataCell>
                           <CButton
-                            color="warning" variant="outline" size="sm" className="me-2"
+                            color="warning"
+                            variant="outline"
+                            size="sm"
+                            className="me-2"
                             onClick={() => handleQuestionEditClick(question.id)}
                           >
                             수정
                           </CButton>
                           <CButton
-                            color="danger" variant="outline" size="sm"
+                            color="danger"
+                            variant="outline"
+                            size="sm"
                             onClick={() => setConfirmDeleteQuestion(question)}
                           >
                             삭제
