@@ -39,6 +39,9 @@ const Question = () => {
   const [questionChoices, setQuestionChoices] = useState([{ text: '', imageUrl: '' }])
   const [confirmDeleteQuestion, setConfirmDeleteQuestion] = useState(null)
 
+  const [showQuestionViewModal, setShowQuestionViewModal] = useState(false)
+  const [viewingQuestion, setViewingQuestion] = useState(null)
+
   const loadCategories = useCallback(async () => {
     setLoading(true)
     setError(null)
@@ -234,13 +237,20 @@ const Question = () => {
     setQuestionChoices([...questionChoices, { text: '', imageUrl: '' }])
   }
 
-  const handleRemoveChoice = (index) => {
-    if (questionChoices.length <= 2) {
-      alert('선택지는 최소 2개 이상이어야 합니다.')
-      return
+
+
+  const handleQuestionViewClick = async (questionId) => {
+    setLoading(true)
+    try {
+      const data = await questions.getById(questionId)
+      setViewingQuestion(data)
+      setShowQuestionViewModal(true)
+    } catch (e) {
+      console.error(e)
+      setError('질문 상세 정보를 불러오지 못했습니다.')
+    } finally {
+      setLoading(false)
     }
-    const newChoices = questionChoices.filter((_, i) => i !== index)
-    setQuestionChoices(newChoices)
   }
 
   return (
@@ -369,6 +379,44 @@ const Question = () => {
           </CButton>
           <CButton color="primary" onClick={handleQuestionSave} disabled={loading}>
             저장
+          </CButton>
+        </CModalFooter>
+      </CModal>
+
+      {/* Question View Modal */}
+      <CModal
+        visible={showQuestionViewModal}
+        onClose={() => setShowQuestionViewModal(false)}
+        size="lg"
+      >
+        <CModalHeader>
+          <CModalTitle>질문 조회</CModalTitle>
+        </CModalHeader>
+        <CModalBody>
+          {viewingQuestion && (
+            <div>
+              <h5>{viewingQuestion.title}</h5>
+              <hr />
+              {viewingQuestion.choices.map((choice, index) => (
+                <div key={index} className="mb-3">
+                  <strong>선택지 {index + 1}:</strong> {choice.text}
+                  {choice.imageUrl && (
+                    <div className="mt-2">
+                      <img
+                        src={choice.imageUrl}
+                        alt={`Choice ${index + 1}`}
+                        style={{ maxWidth: '100%', maxHeight: '200px' }}
+                      />
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </CModalBody>
+        <CModalFooter>
+          <CButton color="secondary" onClick={() => setShowQuestionViewModal(false)}>
+            닫기
           </CButton>
         </CModalFooter>
       </CModal>
@@ -519,6 +567,15 @@ const Question = () => {
                         <CTableDataCell>{question.id}</CTableDataCell>
                         <CTableDataCell>{question.title}</CTableDataCell>
                         <CTableDataCell>
+                          <CButton
+                            color="info"
+                            variant="outline"
+                            size="sm"
+                            className="me-2"
+                            onClick={() => handleQuestionViewClick(question.id)}
+                          >
+                            조회
+                          </CButton>
                           <CButton
                             color="warning"
                             variant="outline"
