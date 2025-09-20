@@ -218,6 +218,16 @@ const Question = () => {
     }
   }
 
+  const handleRemoveChoice = (index) => {
+    if (questionChoices.length <= 2) {
+      alert('선택지는 최소 2개 이상이어야 합니다.')
+      return
+    }
+    const newChoices = [...questionChoices]
+    newChoices.splice(index, 1)
+    setQuestionChoices(newChoices)
+  }
+
   const handleChoiceChange = (index, field, value) => {
     const newChoices = [...questionChoices]
     newChoices[index][field] = value
@@ -230,16 +240,6 @@ const Question = () => {
       return
     }
     setQuestionChoices([...questionChoices, { text: '', imageUrl: '' }])
-  }
-
-  const handleRemoveChoice = (index) => {
-    if (questionChoices.length <= 2) {
-      alert('선택지는 최소 2개 이상이어야 합니다.')
-      return
-    }
-    const newChoices = [...questionChoices]
-    newChoices.splice(index, 1)
-    setQuestionChoices(newChoices)
   }
 
 
