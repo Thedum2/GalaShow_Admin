@@ -83,7 +83,7 @@ const SNS = () => {
         .map((x, i) => ({
           id: i + 1,
           title: x.title ?? '',
-          iconUrl: x.icon_url ?? '',
+          iconUrl: x.iconUrl ?? '',
           url: x.url ?? '',
           order: Number.isInteger(x.order) ? x.order : (i + 1),
         }))
@@ -204,7 +204,7 @@ const SNS = () => {
       const payload = rows.map(({ id }) => ({
         id: id,
         title: (edits[id]?.title || '').trim(),
-        icon_url: (edits[id]?.iconUrl || '').trim(),
+        iconUrl: (edits[id]?.iconUrl || '').trim(),
         url: (edits[id]?.url || '').trim(),
         order: edits[id]?.order ?? 1,
       }))

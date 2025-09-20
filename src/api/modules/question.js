@@ -19,7 +19,9 @@ export const questionCategories = {
     return unwrap(res)
   },
   getQuestionsByCategoryId: async (categoryId, limit, shuffle) => {
-    const res = await client.get(`/question-categories/${categoryId}`, { params: { limit, shuffle } })
+    const res = await client.get(`/question-categories/${categoryId}`, {
+      params: { limit, shuffle },
+    })
     return unwrap(res)
   },
 }
