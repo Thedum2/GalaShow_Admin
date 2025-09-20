@@ -39,8 +39,8 @@ export const questions = {
     const res = await client.post('/questions', { categoryId, title, choices })
     return unwrap(res)
   },
-  update: async (questionId, categoryId, title, choices) => {
-    const res = await client.put(`/questions/${questionId}`, { categoryId, title, choices })
+  update: async (questionId, title, choices) => {
+    const res = await client.put(`/questions/${questionId}`, { title, choices })
     return unwrap(res)
   },
   remove: async (questionId) => {

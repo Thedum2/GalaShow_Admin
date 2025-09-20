@@ -189,12 +189,7 @@ const Question = () => {
       }))
 
       if (editingQuestion) {
-        await questions.update(
-          editingQuestion.id,
-          selectedCategoryId,
-          questionTitle,
-          choicesPayload,
-        )
+        await questions.update(editingQuestion.id, questionTitle, choicesPayload)
       } else {
         await questions.create(selectedCategoryId, questionTitle, choicesPayload)
       }
@@ -235,6 +230,16 @@ const Question = () => {
       return
     }
     setQuestionChoices([...questionChoices, { text: '', imageUrl: '' }])
+  }
+
+  const handleRemoveChoice = (index) => {
+    if (questionChoices.length <= 2) {
+      alert('선택지는 최소 2개 이상이어야 합니다.')
+      return
+    }
+    const newChoices = [...questionChoices]
+    newChoices.splice(index, 1)
+    setQuestionChoices(newChoices)
   }
 
 
