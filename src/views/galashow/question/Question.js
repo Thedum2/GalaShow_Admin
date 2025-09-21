@@ -36,7 +36,7 @@ const Question = () => {
   const [showQuestionModal, setShowQuestionModal] = useState(false)
   const [editingQuestion, setEditingQuestion] = useState(null)
   const [questionTitle, setQuestionTitle] = useState('')
-  const [questionChoices, setQuestionChoices] = useState([{ text: '', imageUrl: '' }])
+  const [questionChoices, setQuestionChoices] = useState([])
   const [confirmDeleteQuestion, setConfirmDeleteQuestion] = useState(null)
 
   const [showQuestionViewModal, setShowQuestionViewModal] = useState(false)
@@ -138,8 +138,10 @@ const Question = () => {
     setEditingQuestion(null)
     setQuestionTitle('')
     setQuestionChoices([
-      { text: '', imageUrl: '' },
-      { text: '', imageUrl: '' },
+      { choiceId: 0, text: '', imageUrl: '' },
+      { choiceId: 1, text: '', imageUrl: '' },
+      { choiceId: 2, text: '', imageUrl: '' },
+      { choiceId: 3, text: '', imageUrl: '' },
     ])
     setShowQuestionModal(true)
   }
@@ -150,10 +152,15 @@ const Question = () => {
       const data = await questions.getById(questionId)
       setEditingQuestion(data)
       setQuestionTitle(data.title)
-      const choices = data.choices.length > 0 ? data.choices : [{ text: '', imageUrl: '' }]
-      while (choices.length < 2) {
-        choices.push({ text: '', imageUrl: '' })
-      }
+      const existingChoices = data.choices || []
+      const choices = Array.from({ length: 4 }, (_, i) => {
+        const existing = existingChoices.find((c) => c.choiceId === i)
+        return {
+          choiceId: i,
+          text: existing?.text || '',
+          imageUrl: existing?.imageUrl || '',
+        }
+      })
       setQuestionChoices(choices)
       setShowQuestionModal(true)
     } catch (e) {
@@ -165,7 +172,7 @@ const Question = () => {
   }
 
   const handleQuestionSave = async () => {
-    if (!selectedCategoryId) {
+    if (!selectedCategoryId && !editingQuestion) {
       alert('카테고리를 선택해주세요.')
       return
     }
@@ -173,21 +180,21 @@ const Question = () => {
       alert('질문 제목을 입력해주세요.')
       return
     }
-    const filteredChoices = questionChoices.filter(
-      (choice) => choice.text.trim() !== '' || choice.imageUrl.trim() !== '',
-    )
-    if (filteredChoices.length < 2 || filteredChoices.length > 4) {
-      alert('선택지는 2개 이상, 4개 이하로 입력해주세요.')
+    const choicesPayload = questionChoices
+      .map((choice) => ({
+        choiceId: choice.choiceId,
+        text: choice.text.trim() === '' ? null : choice.text.trim(),
+        imageUrl: choice.imageUrl.trim() === '' ? null : choice.imageUrl.trim(),
+      }))
+      .filter((choice) => choice.text || choice.imageUrl)
+
+    if (choicesPayload.length < 2) {
+      alert('선택지는 2개 이상 입력해주세요.')
       return
     }
 
     setLoading(true)
     try {
-      const choicesPayload = filteredChoices.map((choice) => ({
-        text: choice.text.trim() === '' ? null : choice.text.trim(),
-        imageUrl: choice.imageUrl.trim() === '' ? null : choice.imageUrl.trim(),
-      }))
-
       if (editingQuestion) {
         await questions.update(editingQuestion.id, questionTitle, choicesPayload)
       } else {
@@ -218,28 +225,10 @@ const Question = () => {
     }
   }
 
-  const handleRemoveChoice = (index) => {
-    if (questionChoices.length <= 2) {
-      alert('선택지는 최소 2개 이상이어야 합니다.')
-      return
-    }
-    const newChoices = [...questionChoices]
-    newChoices.splice(index, 1)
-    setQuestionChoices(newChoices)
-  }
-
   const handleChoiceChange = (index, field, value) => {
     const newChoices = [...questionChoices]
     newChoices[index][field] = value
     setQuestionChoices(newChoices)
-  }
-
-  const handleAddChoice = () => {
-    if (questionChoices.length >= 4) {
-      alert('선택지는 최대 4개까지 추가할 수 있습니다.')
-      return
-    }
-    setQuestionChoices([...questionChoices, { text: '', imageUrl: '' }])
   }
 
   const handleQuestionViewClick = async (questionId) => {
@@ -351,7 +340,17 @@ const Question = () => {
           <div className="mb-3">
             <label className="form-label">선택지</label>
             {questionChoices.map((choice, index) => (
-              <div key={index} className="d-flex align-items-center mb-2" style={{ gap: 8 }}>
+              <div
+                key={choice.choiceId}
+                className="d-flex align-items-center mb-2"
+                style={{ gap: 8 }}
+              >
+                <CFormInput
+                  type="text"
+                  value={`ID: ${choice.choiceId}`}
+                  disabled
+                  style={{ width: '80px' }}
+                />
                 <CFormInput
                   type="text"
                   placeholder="선택지 텍스트"
@@ -366,14 +365,8 @@ const Question = () => {
                   onChange={(e) => handleChoiceChange(index, 'imageUrl', e.target.value)}
                   className="flex-grow-1"
                 />
-                <CButton color="danger" variant="outline" onClick={() => handleRemoveChoice(index)}>
-                  삭제
-                </CButton>
               </div>
             ))}
-            <CButton color="success" variant="outline" onClick={handleAddChoice}>
-              선택지 추가
-            </CButton>
           </div>
         </CModalBody>
         <CModalFooter>
@@ -400,17 +393,14 @@ const Question = () => {
             <div>
               <h5>{viewingQuestion.title}</h5>
               <hr />
-              {viewingQuestion.choices.map((choice, index) => (
-                <div key={choice.id || index} className="mb-3">
-                  <strong>
-                    선택지 {index + 1} (ID: {choice.id}):
-                  </strong>{' '}
-                  {choice.text}
+              {viewingQuestion.choices.map((choice) => (
+                <div key={choice.choiceId} className="mb-3">
+                  <strong>선택지 (ID: {choice.choiceId}):</strong> {choice.text}
                   {choice.imageUrl && (
                     <div className="mt-2">
                       <img
                         src={choice.imageUrl}
-                        alt={`Choice ${index + 1}`}
+                        alt={`Choice ${choice.choiceId}`}
                         style={{ maxWidth: '100%', maxHeight: '200px' }}
                       />
                     </div>
