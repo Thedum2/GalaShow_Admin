@@ -242,8 +242,6 @@ const Question = () => {
     setQuestionChoices([...questionChoices, { text: '', imageUrl: '' }])
   }
 
-
-
   const handleQuestionViewClick = async (questionId) => {
     setLoading(true)
     try {
@@ -403,8 +401,11 @@ const Question = () => {
               <h5>{viewingQuestion.title}</h5>
               <hr />
               {viewingQuestion.choices.map((choice, index) => (
-                <div key={index} className="mb-3">
-                  <strong>선택지 {index + 1}:</strong> {choice.text}
+                <div key={choice.id || index} className="mb-3">
+                  <strong>
+                    선택지 {index + 1} (ID: {choice.id}):
+                  </strong>{' '}
+                  {choice.text}
                   {choice.imageUrl && (
                     <div className="mt-2">
                       <img
