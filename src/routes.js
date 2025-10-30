@@ -7,7 +7,6 @@ const Banner = React.lazy(() => import('./views/galashow/banner/Banner'))
 const BackGround = React.lazy(() => import('./views/galashow/background/BackGround'))
 const Policy = React.lazy(() => import('./views/galashow/policy/Policy'))
 const SNS = React.lazy(() => import('./views/galashow/sns/SNS'))
-const Question = React.lazy(() => import('./views/galashow/question/Question'))
 
 
 const Colors = React.lazy(() => import('./views/theme/colors/Colors'))
@@ -68,7 +67,6 @@ const routes = [
   {path: '/background', name: 'Background', element: BackGround},
   {path: '/policy', name: 'Policy', element: Policy},
   {path: '/sns', name: 'SNS', element: SNS},
-  {path: '/question', name: 'Question', element: Question},
 
 
   {path: '/theme', name: 'Theme', element: Colors, exact: true},

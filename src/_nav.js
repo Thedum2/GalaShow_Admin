@@ -1,7 +1,6 @@
 import React from 'react'
 import CIcon from '@coreui/icons-react'
 import {
-  cil3d,
   cilBell,
   cilBrush,
   cilCalculator,
@@ -57,12 +56,6 @@ const _nav = [
     name: 'SNS링크 설정',
     to: '/sns',
     icon: <CIcon icon={cilStar} customClassName="nav-icon" />,
-  },
-  {
-    component: CNavItem,
-    name: '질문 설정',
-    to: '/question',
-    icon: <CIcon icon={cil3d} customClassName="nav-icon" />,
   },
 
   // CoreUI Free React Admin Template Help 섹션을 하나의 접기 그룹으로 통합
