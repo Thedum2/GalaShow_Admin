@@ -9,12 +9,15 @@ import {
   cilDescription,
   cilDrop,
   cilExternalLink,
+  cilGamepad,
+  cilGraph,
   cilImage,
   cilNotes,
   cilPencil,
   cilPuzzle,
   cilSpeedometer,
   cilStar,
+  cilUser,
 } from '@coreui/icons'
 import { CNavGroup, CNavItem, CNavTitle } from '@coreui/react'
 
@@ -56,6 +59,24 @@ const _nav = [
     name: 'SNS링크 설정',
     to: '/sns',
     icon: <CIcon icon={cilStar} customClassName="nav-icon" />,
+  },
+  {
+    component: CNavItem,
+    name: '미니게임 관리',
+    to: '/minigame',
+    icon: <CIcon icon={cilGamepad} customClassName="nav-icon" />,
+  },
+  {
+    component: CNavItem,
+    name: '생존률 관리',
+    to: '/survival-rate',
+    icon: <CIcon icon={cilGraph} customClassName="nav-icon" />,
+  },
+  {
+    component: CNavItem,
+    name: '시청자 아바타 관리',
+    to: '/avatar',
+    icon: <CIcon icon={cilUser} customClassName="nav-icon" />,
   },
 
   // CoreUI Free React Admin Template Help 섹션을 하나의 접기 그룹으로 통합

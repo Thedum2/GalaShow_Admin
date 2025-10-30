@@ -7,6 +7,9 @@ const Banner = React.lazy(() => import('./views/galashow/banner/Banner'))
 const BackGround = React.lazy(() => import('./views/galashow/background/BackGround'))
 const Policy = React.lazy(() => import('./views/galashow/policy/Policy'))
 const SNS = React.lazy(() => import('./views/galashow/sns/SNS'))
+const Minigame = React.lazy(() => import('./views/galashow/minigame/Minigame'))
+const SurvivalRate = React.lazy(() => import('./views/galashow/survival-rate/SurvivalRate'))
+const Avatar = React.lazy(() => import('./views/galashow/avatar/Avatar'))
 
 
 const Colors = React.lazy(() => import('./views/theme/colors/Colors'))
@@ -67,6 +70,9 @@ const routes = [
   {path: '/background', name: 'Background', element: BackGround},
   {path: '/policy', name: 'Policy', element: Policy},
   {path: '/sns', name: 'SNS', element: SNS},
+  {path: '/minigame', name: 'Minigame', element: Minigame},
+  {path: '/survival-rate', name: 'SurvivalRate', element: SurvivalRate},
+  {path: '/avatar', name: 'Avatar', element: Avatar},
 
 
   {path: '/theme', name: 'Theme', element: Colors, exact: true},
