@@ -419,32 +419,111 @@ const Minigame = () => {
             <>
               {/* 기본 정보 */}
               <div style={{ marginBottom: '24px' }}>
-                <p style={{ marginBottom: '12px' }}>
-                  <strong style={{ color: '#495057' }}>설명:</strong>{' '}
-                  <span style={{ color: '#6c757d' }}>{selectedGame.description}</span>
-                </p>
-                <p style={{ marginBottom: '12px' }}>
-                  <strong style={{ color: '#495057' }}>동영상 URL:</strong>{' '}
-                  <a
-                    href={selectedGame.videoUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ color: '#0d6efd', textDecoration: 'underline' }}
-                  >
-                    {selectedGame.videoUrl}
-                  </a>
-                </p>
-                <p style={{ marginBottom: '12px' }}>
-                  <strong style={{ color: '#495057' }}>로고 URL:</strong>{' '}
-                  <a
-                    href={selectedGame.logoUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ color: '#0d6efd', textDecoration: 'underline' }}
-                  >
-                    {selectedGame.logoUrl}
-                  </a>
-                </p>
+                {/* 설명 */}
+                {selectedGame.description && (
+                  <div style={{ marginBottom: '16px' }}>
+                    <strong
+                      style={{
+                        color: '#495057',
+                        display: 'block',
+                        marginBottom: '8px',
+                        fontSize: '1rem',
+                      }}
+                    >
+                      📝 설명
+                    </strong>
+                    <div
+                      style={{
+                        padding: '16px',
+                        backgroundColor: '#f8f9fa',
+                        borderRadius: '8px',
+                        borderLeft: '4px solid #0d6efd',
+                        color: '#212529',
+                        lineHeight: '1.6',
+                        fontSize: '0.95rem',
+                      }}
+                    >
+                      {selectedGame.description}
+                    </div>
+                  </div>
+                )}
+
+                {/* 로고 이미지 */}
+                {selectedGame.logoUrl && (
+                  <div style={{ marginBottom: '16px' }}>
+                    <strong style={{ color: '#495057', display: 'block', marginBottom: '8px' }}>
+                      로고:
+                    </strong>
+                    <div
+                      style={{
+                        padding: '16px',
+                        backgroundColor: '#f8f9fa',
+                        borderRadius: '8px',
+                        textAlign: 'center',
+                      }}
+                    >
+                      <img
+                        src={selectedGame.logoUrl}
+                        alt="게임 로고"
+                        style={{
+                          maxWidth: '100%',
+                          maxHeight: '200px',
+                          objectFit: 'contain',
+                          borderRadius: '4px',
+                        }}
+                        onError={(e) => {
+                          e.target.style.display = 'none'
+                          e.target.nextSibling.style.display = 'block'
+                        }}
+                      />
+                      <div style={{ display: 'none', color: '#dc3545', marginTop: '8px' }}>
+                        이미지를 불러올 수 없습니다
+                      </div>
+                    </div>
+                    <small style={{ color: '#6c757d', display: 'block', marginTop: '4px' }}>
+                      {selectedGame.logoUrl}
+                    </small>
+                  </div>
+                )}
+
+                {/* 동영상 */}
+                {selectedGame.videoUrl && (
+                  <div style={{ marginBottom: '16px' }}>
+                    <strong style={{ color: '#495057', display: 'block', marginBottom: '8px' }}>
+                      동영상:
+                    </strong>
+                    <div
+                      style={{
+                        padding: '16px',
+                        backgroundColor: '#f8f9fa',
+                        borderRadius: '8px',
+                      }}
+                    >
+                      <video
+                        controls
+                        style={{
+                          width: '100%',
+                          maxHeight: '400px',
+                          borderRadius: '4px',
+                          backgroundColor: '#000',
+                        }}
+                        onError={(e) => {
+                          e.target.style.display = 'none'
+                          e.target.nextSibling.style.display = 'block'
+                        }}
+                      >
+                        <source src={selectedGame.videoUrl} />
+                        브라우저가 비디오를 지원하지 않습니다.
+                      </video>
+                      <div style={{ display: 'none', color: '#dc3545', marginTop: '8px' }}>
+                        동영상을 불러올 수 없습니다
+                      </div>
+                    </div>
+                    <small style={{ color: '#6c757d', display: 'block', marginTop: '4px' }}>
+                      {selectedGame.videoUrl}
+                    </small>
+                  </div>
+                )}
               </div>
 
               {/* 태그 섹션 */}
