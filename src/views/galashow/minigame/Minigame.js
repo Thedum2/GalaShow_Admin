@@ -337,6 +337,57 @@ const Minigame = () => {
     return result
   }
 
+  // 상세 모달용 태그 렌더링 (그룹화된 형태)
+  const renderDetailTags = (tags) => {
+    if (!tags) return null
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        {Object.entries(tags).map(([key, values]) => {
+          if (!Array.isArray(values) || values.filter((v) => v && v.toString().trim()).length === 0)
+            return null
+          return (
+            <div
+              key={key}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '8px 12px',
+                backgroundColor: '#f8f9fa',
+                borderRadius: '6px',
+                borderLeft: `4px solid var(--cui-${TAG_COLORS[key] || 'secondary'})`,
+              }}
+            >
+              <span
+                style={{
+                  fontWeight: 'bold',
+                  fontSize: '0.9rem',
+                  minWidth: '80px',
+                  color: '#495057',
+                }}
+              >
+                {TAG_LABELS[key]}
+              </span>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                {values
+                  .filter((val) => val && val.toString().trim())
+                  .map((val, idx) => (
+                    <CBadge
+                      key={`${key}-${val}-${idx}`}
+                      color={TAG_COLORS[key] || 'secondary'}
+                      style={{ fontSize: '0.85rem', padding: '4px 10px' }}
+                    >
+                      {val}
+                    </CBadge>
+                  ))}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    )
+  }
+
   return (
     <>
       {/* 오류 모달 */}
@@ -363,77 +414,292 @@ const Minigame = () => {
         <CModalHeader>
           <CModalTitle>{selectedGame?.name}</CModalTitle>
         </CModalHeader>
-        <CModalBody>
+        <CModalBody style={{ maxHeight: '70vh', overflowY: 'auto' }}>
           {selectedGame && (
             <>
-              <p>
-                <strong>설명:</strong> {selectedGame.description}
-              </p>
-              <p>
-                <strong>동영상 URL:</strong>{' '}
-                <a href={selectedGame.videoUrl} target="_blank" rel="noopener noreferrer">
-                  {selectedGame.videoUrl}
-                </a>
-              </p>
-              <p>
-                <strong>로고 URL:</strong>{' '}
-                <a href={selectedGame.logoUrl} target="_blank" rel="noopener noreferrer">
-                  {selectedGame.logoUrl}
-                </a>
-              </p>
-              <p>
-                <strong>태그:</strong> {renderTags(selectedGame.tags)}
-              </p>
+              {/* 기본 정보 */}
+              <div style={{ marginBottom: '24px' }}>
+                <p style={{ marginBottom: '12px' }}>
+                  <strong style={{ color: '#495057' }}>설명:</strong>{' '}
+                  <span style={{ color: '#6c757d' }}>{selectedGame.description}</span>
+                </p>
+                <p style={{ marginBottom: '12px' }}>
+                  <strong style={{ color: '#495057' }}>동영상 URL:</strong>{' '}
+                  <a
+                    href={selectedGame.videoUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: '#0d6efd', textDecoration: 'underline' }}
+                  >
+                    {selectedGame.videoUrl}
+                  </a>
+                </p>
+                <p style={{ marginBottom: '12px' }}>
+                  <strong style={{ color: '#495057' }}>로고 URL:</strong>{' '}
+                  <a
+                    href={selectedGame.logoUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: '#0d6efd', textDecoration: 'underline' }}
+                  >
+                    {selectedGame.logoUrl}
+                  </a>
+                </p>
+              </div>
+
+              {/* 태그 섹션 */}
+              <div style={{ marginBottom: '24px' }}>
+                <h5
+                  style={{
+                    fontSize: '1.1rem',
+                    fontWeight: 'bold',
+                    marginBottom: '12px',
+                    color: '#212529',
+                  }}
+                >
+                  태그
+                </h5>
+                {renderDetailTags(selectedGame.tags)}
+              </div>
+
+              {/* 튜토리얼 섹션 */}
               {selectedGame.tutorial && selectedGame.tutorial.length > 0 && (
-                <>
-                  <h5>튜토리얼</h5>
-                  <ol>
+                <div style={{ marginBottom: '24px' }}>
+                  <h5
+                    style={{
+                      fontSize: '1.1rem',
+                      fontWeight: 'bold',
+                      marginBottom: '12px',
+                      color: '#212529',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                    }}
+                  >
+                    <span
+                      style={{
+                        display: 'inline-block',
+                        padding: '4px 12px',
+                        backgroundColor: '#0d6efd',
+                        color: 'white',
+                        borderRadius: '20px',
+                        fontSize: '0.9rem',
+                      }}
+                    >
+                      📚 튜토리얼
+                    </span>
+                  </h5>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     {selectedGame.tutorial.map((t, idx) => (
-                      <li key={idx}>{t.description}</li>
+                      <div
+                        key={idx}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'start',
+                          gap: '12px',
+                          padding: '12px 16px',
+                          backgroundColor: '#e7f3ff',
+                          borderRadius: '8px',
+                          borderLeft: '4px solid #0d6efd',
+                        }}
+                      >
+                        <span
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: '32px',
+                            height: '32px',
+                            backgroundColor: '#0d6efd',
+                            color: 'white',
+                            borderRadius: '50%',
+                            fontWeight: 'bold',
+                            fontSize: '0.9rem',
+                            flexShrink: 0,
+                          }}
+                        >
+                          {idx + 1}
+                        </span>
+                        <span style={{ color: '#212529', lineHeight: '32px' }}>{t.description}</span>
+                      </div>
                     ))}
-                  </ol>
-                </>
+                  </div>
+                </div>
               )}
+
+              {/* 조작법 섹션 */}
               {selectedGame.controls && selectedGame.controls.length > 0 && (
-                <>
-                  <h5>조작법</h5>
-                  <ul>
+                <div style={{ marginBottom: '24px' }}>
+                  <h5
+                    style={{
+                      fontSize: '1.1rem',
+                      fontWeight: 'bold',
+                      marginBottom: '12px',
+                      color: '#212529',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                    }}
+                  >
+                    <span
+                      style={{
+                        display: 'inline-block',
+                        padding: '4px 12px',
+                        backgroundColor: '#198754',
+                        color: 'white',
+                        borderRadius: '20px',
+                        fontSize: '0.9rem',
+                      }}
+                    >
+                      🎮 조작법
+                    </span>
+                  </h5>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     {selectedGame.controls.map((c, idx) => (
-                      <li key={idx}>
-                        <strong>{c.keyName}:</strong> {c.key.join(', ')}
-                      </li>
+                      <div
+                        key={idx}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '12px',
+                          padding: '12px 16px',
+                          backgroundColor: '#d1f4e0',
+                          borderRadius: '8px',
+                          borderLeft: '4px solid #198754',
+                        }}
+                      >
+                        <span style={{ fontWeight: 'bold', color: '#212529', minWidth: '100px' }}>
+                          {c.keyName}
+                        </span>
+                        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                          {c.key.map((k, kidx) => (
+                            <span
+                              key={kidx}
+                              style={{
+                                display: 'inline-block',
+                                padding: '4px 12px',
+                                backgroundColor: '#198754',
+                                color: 'white',
+                                borderRadius: '6px',
+                                fontSize: '0.85rem',
+                                fontWeight: 'bold',
+                              }}
+                            >
+                              {k}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
                     ))}
-                  </ul>
-                </>
+                  </div>
+                </div>
               )}
+
+              {/* 페이즈 타이밍 섹션 */}
               {selectedGame.phaseData && (
-                <>
-                  <h5>PhaseData (페이즈 타이밍)</h5>
-                  <ul>
+                <div style={{ marginBottom: '24px' }}>
+                  <h5
+                    style={{
+                      fontSize: '1.1rem',
+                      fontWeight: 'bold',
+                      marginBottom: '12px',
+                      color: '#212529',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                    }}
+                  >
+                    <span
+                      style={{
+                        display: 'inline-block',
+                        padding: '4px 12px',
+                        backgroundColor: '#fd7e14',
+                        color: 'white',
+                        borderRadius: '20px',
+                        fontSize: '0.9rem',
+                      }}
+                    >
+                      ⏱️ PhaseData (페이즈 타이밍)
+                    </span>
+                  </h5>
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                      gap: '10px',
+                    }}
+                  >
                     {Object.entries(selectedGame.phaseData).map(([key, value]) => (
-                      <li key={key}>
-                        <strong>{key}:</strong> {value}ms
-                      </li>
+                      <div
+                        key={key}
+                        style={{
+                          padding: '12px 16px',
+                          backgroundColor: '#fff3cd',
+                          borderRadius: '8px',
+                          borderLeft: '4px solid #fd7e14',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '4px',
+                        }}
+                      >
+                        <span style={{ fontSize: '0.85rem', color: '#856404', fontWeight: '600' }}>
+                          {key}
+                        </span>
+                        <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#212529' }}>
+                          {value}
+                          <span style={{ fontSize: '0.9rem', fontWeight: 'normal', color: '#6c757d' }}>
+                            ms
+                          </span>
+                        </span>
+                      </div>
                     ))}
-                  </ul>
-                </>
+                  </div>
+                </div>
               )}
+
+              {/* GameData 섹션 */}
               {selectedGame.gameData && (
-                <>
-                  <h5>GameData</h5>
+                <div style={{ marginBottom: '24px' }}>
+                  <h5
+                    style={{
+                      fontSize: '1.1rem',
+                      fontWeight: 'bold',
+                      marginBottom: '12px',
+                      color: '#212529',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                    }}
+                  >
+                    <span
+                      style={{
+                        display: 'inline-block',
+                        padding: '4px 12px',
+                        backgroundColor: '#6f42c1',
+                        color: 'white',
+                        borderRadius: '20px',
+                        fontSize: '0.9rem',
+                      }}
+                    >
+                      💾 GameData
+                    </span>
+                  </h5>
                   <pre
                     style={{
-                      backgroundColor: '#f5f5f5',
-                      padding: '10px',
-                      borderRadius: '4px',
+                      backgroundColor: '#2d2d2d',
+                      color: '#f8f8f2',
+                      padding: '16px',
+                      borderRadius: '8px',
                       overflow: 'auto',
                       maxHeight: '300px',
                       fontSize: '0.9em',
+                      border: '2px solid #6f42c1',
+                      margin: 0,
                     }}
                   >
                     {JSON.stringify(selectedGame.gameData, null, 2)}
                   </pre>
-                </>
+                </div>
               )}
             </>
           )}
