@@ -80,6 +80,17 @@ const Minigame = () => {
     },
     tutorial: [],
     controls: [],
+    phaseData: {
+      READY: 2000,
+      SETUP: 1500,
+      PRESENT: 800,
+      INPUT: 8000,
+      WAIT: 1500,
+      EXECUTE: 800,
+      REVEAL: 2500,
+      CLEANUP: 1500,
+    },
+    gameData: '',
   })
 
   const load = useCallback(async () => {
@@ -119,15 +130,26 @@ const Minigame = () => {
       videoUrl: '',
       logoUrl: '',
       tags: {
-        scale: ['medium'],
-        difficulty: ['2'],
-        round: ['1-2'],
-        type: ['strategy'],
-        survivalRate: ['medium'],
-        winCondition: ['score'],
+        scale: [''],
+        difficulty: [''],
+        round: [''],
+        type: [''],
+        survivalRate: [''],
+        winCondition: [''],
       },
       tutorial: [],
       controls: [],
+      phaseData: {
+        READY: 1000,
+        SETUP: 1000,
+        PRESENT: 1000,
+        INPUT: 1000,
+        WAIT: 1000,
+        EXECUTE: 1000,
+        REVEAL: 1000,
+        CLEANUP: 1000,
+      },
+      gameData: '',
     })
     setSelectedGame(null)
     setShowEditModal(true)
@@ -140,6 +162,17 @@ const Minigame = () => {
         ...detail,
         tutorial: detail.tutorial || [],
         controls: detail.controls || [],
+        phaseData: detail.phaseData || {
+          READY: 2000,
+          SETUP: 1500,
+          PRESENT: 800,
+          INPUT: 8000,
+          WAIT: 1500,
+          EXECUTE: 800,
+          REVEAL: 2500,
+          CLEANUP: 1500,
+        },
+        gameData: detail.gameData ? JSON.stringify(detail.gameData, null, 2) : '',
       })
       setSelectedGame(detail)
       setShowEditModal(true)
@@ -152,10 +185,28 @@ const Minigame = () => {
   const handleSave = async () => {
     try {
       setSaving(true)
+
+      // gameData JSON 검증
+      let parsedGameData = null
+      if (formData.gameData && formData.gameData.trim()) {
+        try {
+          parsedGameData = JSON.parse(formData.gameData)
+        } catch (e) {
+          setError('gameData가 올바른 JSON 형식이 아닙니다.')
+          setSaving(false)
+          return
+        }
+      }
+
+      const dataToSave = {
+        ...formData,
+        gameData: parsedGameData,
+      }
+
       if (selectedGame?.id) {
-        await updateMinigame(selectedGame.id, formData)
+        await updateMinigame(selectedGame.id, dataToSave)
       } else {
-        await createMinigame(formData)
+        await createMinigame(dataToSave)
       }
       setShowEditModal(false)
       load()
@@ -272,11 +323,14 @@ const Minigame = () => {
     Object.entries(tags).forEach(([key, values]) => {
       if (Array.isArray(values)) {
         values.forEach((val) => {
-          result.push(
-            <CBadge key={`${key}-${val}`} color={TAG_COLORS[key] || 'secondary'} className="me-1">
-              {TAG_LABELS[key]}: {val}
-            </CBadge>,
-          )
+          // 빈 값이나 공백만 있는 값은 표시하지 않음
+          if (val && val.toString().trim()) {
+            result.push(
+              <CBadge key={`${key}-${val}`} color={TAG_COLORS[key] || 'secondary'} className="me-1">
+                {TAG_LABELS[key]}: {val}
+              </CBadge>,
+            )
+          }
         })
       }
     })
@@ -350,6 +404,35 @@ const Minigame = () => {
                       </li>
                     ))}
                   </ul>
+                </>
+              )}
+              {selectedGame.phaseData && (
+                <>
+                  <h5>PhaseData (페이즈 타이밍)</h5>
+                  <ul>
+                    {Object.entries(selectedGame.phaseData).map(([key, value]) => (
+                      <li key={key}>
+                        <strong>{key}:</strong> {value}ms
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+              {selectedGame.gameData && (
+                <>
+                  <h5>GameData</h5>
+                  <pre
+                    style={{
+                      backgroundColor: '#f5f5f5',
+                      padding: '10px',
+                      borderRadius: '4px',
+                      overflow: 'auto',
+                      maxHeight: '300px',
+                      fontSize: '0.9em',
+                    }}
+                  >
+                    {JSON.stringify(selectedGame.gameData, null, 2)}
+                  </pre>
                 </>
               )}
             </>
@@ -639,6 +722,150 @@ const Minigame = () => {
               </CCardBody>
             </CCard>
           ))}
+
+          <hr className="my-4" />
+
+          {/* PhaseData */}
+          <h5 className="mb-3">PhaseData (페이즈 타이밍 - ms 단위)</h5>
+          <CRow className="mb-2">
+            <CFormLabel className="col-sm-3 col-form-label">READY</CFormLabel>
+            <CCol sm={9}>
+              <CFormInput
+                type="number"
+                value={formData.phaseData.READY}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    phaseData: { ...formData.phaseData, READY: parseInt(e.target.value) || 0 },
+                  })
+                }
+              />
+            </CCol>
+          </CRow>
+          <CRow className="mb-2">
+            <CFormLabel className="col-sm-3 col-form-label">SETUP</CFormLabel>
+            <CCol sm={9}>
+              <CFormInput
+                type="number"
+                value={formData.phaseData.SETUP}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    phaseData: { ...formData.phaseData, SETUP: parseInt(e.target.value) || 0 },
+                  })
+                }
+              />
+            </CCol>
+          </CRow>
+          <CRow className="mb-2">
+            <CFormLabel className="col-sm-3 col-form-label">PRESENT</CFormLabel>
+            <CCol sm={9}>
+              <CFormInput
+                type="number"
+                value={formData.phaseData.PRESENT}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    phaseData: { ...formData.phaseData, PRESENT: parseInt(e.target.value) || 0 },
+                  })
+                }
+              />
+            </CCol>
+          </CRow>
+          <CRow className="mb-2">
+            <CFormLabel className="col-sm-3 col-form-label">INPUT</CFormLabel>
+            <CCol sm={9}>
+              <CFormInput
+                type="number"
+                value={formData.phaseData.INPUT}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    phaseData: { ...formData.phaseData, INPUT: parseInt(e.target.value) || 0 },
+                  })
+                }
+              />
+            </CCol>
+          </CRow>
+          <CRow className="mb-2">
+            <CFormLabel className="col-sm-3 col-form-label">WAIT</CFormLabel>
+            <CCol sm={9}>
+              <CFormInput
+                type="number"
+                value={formData.phaseData.WAIT}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    phaseData: { ...formData.phaseData, WAIT: parseInt(e.target.value) || 0 },
+                  })
+                }
+              />
+            </CCol>
+          </CRow>
+          <CRow className="mb-2">
+            <CFormLabel className="col-sm-3 col-form-label">EXECUTE</CFormLabel>
+            <CCol sm={9}>
+              <CFormInput
+                type="number"
+                value={formData.phaseData.EXECUTE}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    phaseData: { ...formData.phaseData, EXECUTE: parseInt(e.target.value) || 0 },
+                  })
+                }
+              />
+            </CCol>
+          </CRow>
+          <CRow className="mb-2">
+            <CFormLabel className="col-sm-3 col-form-label">REVEAL</CFormLabel>
+            <CCol sm={9}>
+              <CFormInput
+                type="number"
+                value={formData.phaseData.REVEAL}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    phaseData: { ...formData.phaseData, REVEAL: parseInt(e.target.value) || 0 },
+                  })
+                }
+              />
+            </CCol>
+          </CRow>
+          <CRow className="mb-2">
+            <CFormLabel className="col-sm-3 col-form-label">CLEANUP</CFormLabel>
+            <CCol sm={9}>
+              <CFormInput
+                type="number"
+                value={formData.phaseData.CLEANUP}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    phaseData: { ...formData.phaseData, CLEANUP: parseInt(e.target.value) || 0 },
+                  })
+                }
+              />
+            </CCol>
+          </CRow>
+
+          <hr className="my-4" />
+
+          {/* GameData */}
+          <h5 className="mb-3">GameData (게임별 커스텀 데이터 - JSON 형식)</h5>
+          <CRow className="mb-3">
+            <CCol sm={12}>
+              <CFormTextarea
+                rows={10}
+                value={formData.gameData}
+                onChange={(e) => setFormData({ ...formData, gameData: e.target.value })}
+                placeholder='{"type": "quiz", "timeLimit": 8, ...}'
+                style={{ fontFamily: 'monospace', fontSize: '0.9em' }}
+              />
+              <small className="text-muted">
+                각 게임마다 다른 JSON 형식의 데이터를 입력하세요. 비워두면 null로 저장됩니다.
+              </small>
+            </CCol>
+          </CRow>
         </CModalBody>
         <CModalFooter>
           <CButton color="secondary" onClick={() => setShowEditModal(false)}>

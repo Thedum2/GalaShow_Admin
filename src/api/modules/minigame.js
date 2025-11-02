@@ -38,6 +38,8 @@ export async function getMinigameById(gameId) {
  * @param {Object} data.tags - 태그 객체
  * @param {Array} data.tutorial - 튜토리얼 배열
  * @param {Array} data.controls - 조작법 배열
+ * @param {Object} data.phaseData - 페이즈 타이밍 데이터 (ms 단위)
+ * @param {Object} data.gameData - 게임별 커스텀 데이터 (JSON)
  * @returns {Promise<Object>}
  */
 export async function createMinigame(data) {
