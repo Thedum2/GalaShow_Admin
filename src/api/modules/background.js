@@ -21,6 +21,6 @@ export async function updateBackground({ backId, title, type, url }) {
 
   const body = { title, type, url };
   const res = await api.put(`/background/${backId}`, body);
-  const payload = unwrap(res); // { success: true, status: "200" }
-  return payload?.success === true;
+  return res.status === 200;
+
 }

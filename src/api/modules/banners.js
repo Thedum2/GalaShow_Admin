@@ -21,6 +21,5 @@ export async function updateBanner({ bannerId, message }) {
   if (!message?.trim()) throw new Error('message가 필요합니다.');
 
   const res = await api.put(`/banners/${bannerId}`, { message });
-  const payload = unwrap(res); // { success: true, status: "200" }
-  return payload?.success === true;
+  return res.status === 200;
 }

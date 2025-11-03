@@ -41,6 +41,5 @@ export async function updatePolicies({ termsOfService, privacyPolicy }) {
   if (!isValidUrl(pp))  throw new Error('개인정보처리방침 링크가 올바른 URL이 아닙니다.')
 
   const res = await api.put('/policies', { termsOfService: tos, privacyPolicy: pp })
-  const payload = unwrap(res)
-  return payload?.success === true
+  return res.status === 200;
 }

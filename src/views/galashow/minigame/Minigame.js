@@ -158,20 +158,47 @@ const Minigame = () => {
   const handleEdit = async (gameId) => {
     try {
       const detail = await getMinigameById(gameId)
+
+      // tags 각 속성을 배열로 변환 (서버에서 다른 형태로 올 수 있음)
+      const normalizeTags = (tags) => {
+        if (!tags || typeof tags !== 'object') {
+          return {
+            scale: [],
+            difficulty: [],
+            round: [],
+            type: [],
+            survivalRate: [],
+            winCondition: [],
+          }
+        }
+
+        return {
+          scale: Array.isArray(tags.scale) ? tags.scale : (tags.scale ? [tags.scale] : []),
+          difficulty: Array.isArray(tags.difficulty) ? tags.difficulty : (tags.difficulty ? [tags.difficulty] : []),
+          round: Array.isArray(tags.round) ? tags.round : (tags.round ? [tags.round] : []),
+          type: Array.isArray(tags.type) ? tags.type : (tags.type ? [tags.type] : []),
+          survivalRate: Array.isArray(tags.survivalRate) ? tags.survivalRate : (tags.survivalRate ? [tags.survivalRate] : []),
+          winCondition: Array.isArray(tags.winCondition) ? tags.winCondition : (tags.winCondition ? [tags.winCondition] : []),
+        }
+      }
+
+      const normalizedPhaseData = detail.phaseData || {
+        READY: 2000,
+        SETUP: 1500,
+        PRESENT: 800,
+        INPUT: 8000,
+        WAIT: 1500,
+        EXECUTE: 800,
+        REVEAL: 2500,
+        CLEANUP: 1500,
+      }
+
       setFormData({
         ...detail,
+        tags: normalizeTags(detail.tags),
         tutorial: detail.tutorial || [],
         controls: detail.controls || [],
-        phaseData: detail.phaseData || {
-          READY: 2000,
-          SETUP: 1500,
-          PRESENT: 800,
-          INPUT: 8000,
-          WAIT: 1500,
-          EXECUTE: 800,
-          REVEAL: 2500,
-          CLEANUP: 1500,
-        },
+        phaseData: normalizedPhaseData,
         gameData: detail.gameData ? JSON.stringify(detail.gameData, null, 2) : '',
       })
       setSelectedGame(detail)
@@ -865,14 +892,20 @@ const Minigame = () => {
             <CFormLabel className="col-sm-3 col-form-label">규모 (Scale)</CFormLabel>
             <CCol sm={9}>
               <div>
-                {['xs', 'small', 'medium', 'large', 'xl'].map((scale) => (
+                {[
+                  { value: 'xs', label: '초소형' },
+                  { value: 'small', label: '소형' },
+                  { value: 'medium', label: '중형' },
+                  { value: 'large', label: '대형' },
+                  { value: 'xl', label: '초대형' },
+                ].map((item) => (
                   <CFormCheck
-                    key={scale}
+                    key={item.value}
                     inline
-                    id={`scale-${scale}`}
-                    label={scale.toUpperCase()}
-                    checked={formData.tags.scale.includes(scale)}
-                    onChange={() => handleTagToggle('scale', scale)}
+                    id={`scale-${item.value}`}
+                    label={item.label}
+                    checked={formData.tags.scale.includes(item.value)}
+                    onChange={() => handleTagToggle('scale', item.value)}
                   />
                 ))}
               </div>
@@ -882,14 +915,19 @@ const Minigame = () => {
             <CFormLabel className="col-sm-3 col-form-label">난이도 (Difficulty)</CFormLabel>
             <CCol sm={9}>
               <div>
-                {['1', '2', '3', '4'].map((difficulty) => (
+                {[
+                  { value: '1', label: '1단계' },
+                  { value: '2', label: '2단계' },
+                  { value: '3', label: '3단계' },
+                  { value: '4', label: '4단계' },
+                ].map((item) => (
                   <CFormCheck
-                    key={difficulty}
+                    key={item.value}
                     inline
-                    id={`difficulty-${difficulty}`}
-                    label={difficulty}
-                    checked={formData.tags.difficulty.includes(difficulty)}
-                    onChange={() => handleTagToggle('difficulty', difficulty)}
+                    id={`difficulty-${item.value}`}
+                    label={item.label}
+                    checked={formData.tags.difficulty.includes(item.value)}
+                    onChange={() => handleTagToggle('difficulty', item.value)}
                   />
                 ))}
               </div>
@@ -899,14 +937,20 @@ const Minigame = () => {
             <CFormLabel className="col-sm-3 col-form-label">라운드 (Round)</CFormLabel>
             <CCol sm={9}>
               <div>
-                {['1-2', '3-4', '5-6', '7-8', '9+'].map((round) => (
+                {[
+                  { value: '1-2', label: '1-2라운드' },
+                  { value: '3-4', label: '3-4라운드' },
+                  { value: '5-6', label: '5-6라운드' },
+                  { value: '7-8', label: '7-8라운드' },
+                  { value: '9+', label: '9라운드+' },
+                ].map((item) => (
                   <CFormCheck
-                    key={round}
+                    key={item.value}
                     inline
-                    id={`round-${round}`}
-                    label={round}
-                    checked={formData.tags.round.includes(round)}
-                    onChange={() => handleTagToggle('round', round)}
+                    id={`round-${item.value}`}
+                    label={item.label}
+                    checked={formData.tags.round.includes(item.value)}
+                    onChange={() => handleTagToggle('round', item.value)}
                   />
                 ))}
               </div>
@@ -916,14 +960,21 @@ const Minigame = () => {
             <CFormLabel className="col-sm-3 col-form-label">게임 타입 (Type)</CFormLabel>
             <CCol sm={9}>
               <div>
-                {['simulation', 'strategy', 'choice', 'luck', 'coop', 'brain'].map((type) => (
+                {[
+                  { value: 'simulation', label: '시뮬레이션' },
+                  { value: 'strategy', label: '전략' },
+                  { value: 'choice', label: '선택' },
+                  { value: 'luck', label: '운' },
+                  { value: 'coop', label: '협동' },
+                  { value: 'brain', label: '두뇌' },
+                ].map((item) => (
                   <CFormCheck
-                    key={type}
+                    key={item.value}
                     inline
-                    id={`type-${type}`}
-                    label={type}
-                    checked={formData.tags.type.includes(type)}
-                    onChange={() => handleTagToggle('type', type)}
+                    id={`type-${item.value}`}
+                    label={item.label}
+                    checked={formData.tags.type.includes(item.value)}
+                    onChange={() => handleTagToggle('type', item.value)}
                   />
                 ))}
               </div>
@@ -933,14 +984,20 @@ const Minigame = () => {
             <CFormLabel className="col-sm-3 col-form-label">생존률 (Survival Rate)</CFormLabel>
             <CCol sm={9}>
               <div>
-                {['very_low', 'low', 'medium', 'high', 'very_high'].map((rate) => (
+                {[
+                  { value: 'very_low', label: '매우 낮음' },
+                  { value: 'low', label: '낮음' },
+                  { value: 'medium', label: '보통' },
+                  { value: 'high', label: '높음' },
+                  { value: 'very_high', label: '매우 높음' },
+                ].map((item) => (
                   <CFormCheck
-                    key={rate}
+                    key={item.value}
                     inline
-                    id={`survivalRate-${rate}`}
-                    label={rate.replace('_', ' ')}
-                    checked={formData.tags.survivalRate.includes(rate)}
-                    onChange={() => handleTagToggle('survivalRate', rate)}
+                    id={`survivalRate-${item.value}`}
+                    label={item.label}
+                    checked={formData.tags.survivalRate.includes(item.value)}
+                    onChange={() => handleTagToggle('survivalRate', item.value)}
                   />
                 ))}
               </div>
@@ -950,14 +1007,20 @@ const Minigame = () => {
             <CFormLabel className="col-sm-3 col-form-label">승리 조건 (Win Condition)</CFormLabel>
             <CCol sm={9}>
               <div>
-                {['first', 'score', 'rank', 'goal', 'accuracy'].map((condition) => (
+                {[
+                  { value: 'first', label: '1등' },
+                  { value: 'score', label: '점수' },
+                  { value: 'rank', label: '순위' },
+                  { value: 'goal', label: '목표' },
+                  { value: 'accuracy', label: '정확도' },
+                ].map((item) => (
                   <CFormCheck
-                    key={condition}
+                    key={item.value}
                     inline
-                    id={`winCondition-${condition}`}
-                    label={condition}
-                    checked={formData.tags.winCondition.includes(condition)}
-                    onChange={() => handleTagToggle('winCondition', condition)}
+                    id={`winCondition-${item.value}`}
+                    label={item.label}
+                    checked={formData.tags.winCondition.includes(item.value)}
+                    onChange={() => handleTagToggle('winCondition', item.value)}
                   />
                 ))}
               </div>

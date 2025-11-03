@@ -164,7 +164,8 @@ const SNS = () => {
   }, [items, originals, edits])
 
   const allValid = useMemo(() => {
-    if (items.length === 0) return false
+    // 항목이 0개여도 저장 가능하도록 수정 (전체 삭제 후 저장 허용)
+    if (items.length === 0) return true
     return items.every(({ id }) => {
       const e = edits[id] || {}
       const validTitle = !!e.title?.trim()

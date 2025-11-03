@@ -47,7 +47,7 @@ export async function createMinigame(data) {
   if (!data.description?.trim()) throw new Error('description이 필요합니다.')
 
   const res = await api.post('/minigames', data)
-  return unwrap(unwrap(res))
+  return res.status === 200;
 }
 
 /**
@@ -60,7 +60,7 @@ export async function updateMinigame(gameId, data) {
   if (!gameId) throw new Error('gameId가 필요합니다.')
 
   const res = await api.put(`/minigames/${gameId}`, data)
-  return unwrap(unwrap(res))
+  return res.status === 200;
 }
 
 /**
@@ -72,9 +72,7 @@ export async function deleteMinigame(gameId) {
   if (!gameId) throw new Error('gameId가 필요합니다.')
 
   const res = await api.delete(`/minigames/${gameId}`)
-  unwrap(res)
-  // 에러가 발생하지 않으면 성공
-  return true
+  return res.status === 200;
 }
 
 /**
@@ -104,7 +102,7 @@ export async function addMinigameSurvivalRate(gameId, data) {
   }
 
   const res = await api.post(`/minigames/${gameId}/survival-rate`, data)
-  return unwrap(unwrap(res))
+  return res.status === 200;
 }
 
 /**
@@ -121,5 +119,5 @@ export async function updateMinigameSurvivalRate(gameId, data) {
   if (!gameId) throw new Error('gameId가 필요합니다.')
 
   const res = await api.put(`/minigames/${gameId}/survival-rate`, data)
-  return unwrap(unwrap(res))
+  return res.status === 200;
 }

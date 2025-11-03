@@ -20,7 +20,5 @@ export async function updateViewerAvatars(data) {
   if (!Array.isArray(data)) throw new Error('data는 배열이어야 합니다.')
 
   const res = await api.put('/viewer-avatars', { data })
-  unwrap(res)
-  // 에러가 발생하지 않으면 성공
-  return true
+  return res.status === 200;
 }

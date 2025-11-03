@@ -9,6 +9,5 @@ export async function getSnsLinks() {
 
 export async function putSnsLinks(list) {
   const res = await api.put('/sns-links', { data: list })
-  const data = unwrap(res)
-  return data?.success === true
+  return res.status === 200;
 }
