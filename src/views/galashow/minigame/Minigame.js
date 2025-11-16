@@ -182,16 +182,43 @@ const Minigame = () => {
         }
       }
 
-      const normalizedPhaseData = detail.phaseData || {
-        READY: 2000,
-        SETUP: 1500,
-        PRESENT: 800,
-        INPUT: 8000,
-        WAIT: 1500,
-        EXECUTE: 800,
-        REVEAL: 2500,
-        CLEANUP: 1500,
+      // phaseData 정규화 (타이밍 정보만 추출)
+      const normalizePhaseData = (phaseData) => {
+        if (!phaseData || typeof phaseData !== 'object') {
+          return {
+            READY: 1000,
+            SETUP: 1000,
+            PRESENT: 1000,
+            INPUT: 1000,
+            WAIT: 1000,
+            EXECUTE: 1000,
+            REVEAL: 1000,
+            CLEANUP: 1000,
+          }
+        }
+
+        // phases와 totalPhases를 제외한 타이밍 정보만 추출
+        const timingData = {}
+        Object.entries(phaseData).forEach(([key, value]) => {
+          if (key !== 'phases' && key !== 'totalPhases' && typeof value === 'number') {
+            timingData[key] = value
+          }
+        })
+
+        // 기본값과 병합
+        return {
+          READY: timingData.READY || 1000,
+          SETUP: timingData.SETUP || 1000,
+          PRESENT: timingData.PRESENT || 1000,
+          INPUT: timingData.INPUT || 1000,
+          WAIT: timingData.WAIT || 1000,
+          EXECUTE: timingData.EXECUTE || 1000,
+          REVEAL: timingData.REVEAL || 1000,
+          CLEANUP: timingData.CLEANUP || 1000,
+        }
       }
+
+      const normalizedPhaseData = normalizePhaseData(detail.phaseData)
 
       setFormData({
         ...detail,
@@ -624,7 +651,7 @@ const Minigame = () => {
                             flexShrink: 0,
                           }}
                         >
-                          {idx + 1}
+                          {t.step || idx + 1}
                         </span>
                         <span style={{ color: '#212529', lineHeight: '32px' }}>{t.description}</span>
                       </div>
@@ -701,6 +728,76 @@ const Minigame = () => {
                 </div>
               )}
 
+              {/* 페이즈 정보 섹션 */}
+              {selectedGame.phaseData?.phases && selectedGame.phaseData.phases.length > 0 && (
+                <div style={{ marginBottom: '24px' }}>
+                  <h5
+                    style={{
+                      fontSize: '1.1rem',
+                      fontWeight: 'bold',
+                      marginBottom: '12px',
+                      color: '#212529',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                    }}
+                  >
+                    <span
+                      style={{
+                        display: 'inline-block',
+                        padding: '4px 12px',
+                        backgroundColor: '#6f42c1',
+                        color: 'white',
+                        borderRadius: '20px',
+                        fontSize: '0.9rem',
+                      }}
+                    >
+                      🎯 게임 페이즈 (총 {selectedGame.phaseData.totalPhases}단계)
+                    </span>
+                  </h5>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {selectedGame.phaseData.phases.map((phase, idx) => (
+                      <div
+                        key={idx}
+                        style={{
+                          padding: '16px',
+                          backgroundColor: '#f3e5f5',
+                          borderRadius: '8px',
+                          borderLeft: '4px solid #6f42c1',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                          <span
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              width: '36px',
+                              height: '36px',
+                              backgroundColor: '#6f42c1',
+                              color: 'white',
+                              borderRadius: '50%',
+                              fontWeight: 'bold',
+                              fontSize: '1rem',
+                            }}
+                          >
+                            {phase.phaseNumber}
+                          </span>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontWeight: 'bold', color: '#212529', marginBottom: '4px' }}>
+                              {phase.description}
+                            </div>
+                            <small style={{ color: '#6c757d' }}>
+                              ⏱️ 지속시간: {phase.duration}초
+                            </small>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* 페이즈 타이밍 섹션 */}
               {selectedGame.phaseData && (
                 <div style={{ marginBottom: '24px' }}>
@@ -725,7 +822,7 @@ const Minigame = () => {
                         fontSize: '0.9rem',
                       }}
                     >
-                      ⏱️ PhaseData (페이즈 타이밍)
+                      ⏱️ 페이즈 타이밍 설정
                     </span>
                   </h5>
                   <div
@@ -735,30 +832,32 @@ const Minigame = () => {
                       gap: '10px',
                     }}
                   >
-                    {Object.entries(selectedGame.phaseData).map(([key, value]) => (
-                      <div
-                        key={key}
-                        style={{
-                          padding: '12px 16px',
-                          backgroundColor: '#fff3cd',
-                          borderRadius: '8px',
-                          borderLeft: '4px solid #fd7e14',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '4px',
-                        }}
-                      >
-                        <span style={{ fontSize: '0.85rem', color: '#856404', fontWeight: '600' }}>
-                          {key}
-                        </span>
-                        <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#212529' }}>
-                          {value}
-                          <span style={{ fontSize: '0.9rem', fontWeight: 'normal', color: '#6c757d' }}>
-                            ms
+                    {Object.entries(selectedGame.phaseData)
+                      .filter(([key]) => !['totalPhases', 'phases'].includes(key))
+                      .map(([key, value]) => (
+                        <div
+                          key={key}
+                          style={{
+                            padding: '12px 16px',
+                            backgroundColor: '#fff3cd',
+                            borderRadius: '8px',
+                            borderLeft: '4px solid #fd7e14',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '4px',
+                          }}
+                        >
+                          <span style={{ fontSize: '0.85rem', color: '#856404', fontWeight: '600' }}>
+                            {key}
                           </span>
-                        </span>
-                      </div>
-                    ))}
+                          <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#212529' }}>
+                            {value}
+                            <span style={{ fontSize: '0.9rem', fontWeight: 'normal', color: '#6c757d' }}>
+                              ms
+                            </span>
+                          </span>
+                        </div>
+                      ))}
                   </div>
                 </div>
               )}
