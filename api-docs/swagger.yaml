@@ -1,0 +1,2201 @@
+# 현재 구현 기준. 사용 안내: swagger.md
+openapi: 3.0.3
+info:
+  title: GALASHOW Backend API
+  version: '2026-09-29'
+  description: 'API 기준 커밋 2779546 및 2026-09-29 로컬 환경변수/CORS/OPTIONS 변경과 현재 SAM을 확인하여 작성한 Swagger/OpenAPI 문서. 제품 요구사항이나
+    미래 API 설계가 아니다.
+
+
+    일반 응답은 status(문자열)/data/error이며 데이터 없는 성공은 {"status":"200"}. 인증은 엔드포인트별 Bearer JWT이며 미니게임·아바타 GET도 인증이 필요하다.
+    현재 write API는 JWT 유효성만 확인하고 admin 역할은 강제하지 않는다. 토큰 만료 443 등 코드의 비표준 HTTP 상태를 그대로 기록했다.
+
+
+    실제 서비스 로그인은 개발 계정 외 미구현이다. 업무 API 호출에는 환경에 맞는 DB/AWS 설정이 필요하다. 성공 예시는 형식 예시이며 운영 동작 검증이 아니다. 잘못된 JSON/타입은 공통
+    catch에서 500이 될 수 있다. 업무 API의 AppBootstrap 초기화 오류는 핸들러 try 밖에서 발생해 API Gateway 오류가 될 수 있다.
+
+
+    방·세션·참가자·라운드 결과 API는 아직 없으며 포함하지 않았다. SAM ANY catch-all은 지원 메서드를 operation으로 표시한다.'
+servers:
+- url: http://127.0.0.1:3000
+  description: SAM local 예시 주소. 서버를 자동 실행하지 않으며 DB/AWS 설정 준비가 필요하다.
+- url: '{baseUrl}'
+  description: 사용자가 지정하는 실제 API base URL. 문서 서버 주소와 구분한다.
+  variables:
+    baseUrl:
+      default: https://api.example.invalid
+      description: 환경의 실제 custom domain 또는 API Gateway URL(필요하면 /dev, /prod 포함)로 바꾼다. 확인되지 않은 운영 주소는 넣지 않았다.
+tags:
+- name: Auth
+  description: 로그인·갱신·로그아웃·검증
+- name: Banners
+  description: 배너
+- name: Background
+  description: 배경
+- name: Policies
+  description: 정책 문서 링크
+- name: SNS
+  description: SNS 링크
+- name: Minigames
+  description: 미니게임 카탈로그
+- name: Survival
+  description: 게임별 생존률 집계
+- name: Avatars
+  description: 시청자 아바타
+- name: CORS
+  description: SAM에 등록된 OPTIONS
+- name: Routing
+  description: SAM catch-all 미지원 경로의 현재 응답
+paths:
+  /auth/login:
+    post:
+      tags:
+      - Auth
+      summary: 로그인 및 토큰 발급
+      operationId: login
+      description: 현재 ValidateCredentialAsync는 개발 환경 고정 계정 외의 실제 계정 로그인이 미구현이다. 성공하면 access/refresh token을 함께 반환한다.
+        비밀값은 예시에 포함하지 않는다.
+      security: []
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenSuccess'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '440':
+          $ref: '#/components/responses/Error440'
+        '500':
+          $ref: '#/components/responses/Error500'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+    options:
+      tags:
+      - CORS
+      summary: 'CORS 사전 요청: /auth/login'
+      operationId: preflight1
+      security: []
+      responses:
+        '200':
+          $ref: '#/components/responses/CorsSuccess'
+  /auth/refresh:
+    post:
+      tags:
+      - Auth
+      summary: 토큰 갱신 및 refresh token 교체
+      operationId: refreshTokens
+      description: 기존 refresh token을 폐기하고 새 access/refresh token을 반환한다. 클라이언트는 두 토큰을 모두 교체해야 한다. 본문/토큰 누락은 401.
+        역할 조회 실패 시 user 역할로 fallback한다.
+      security: []
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenSuccess'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '444':
+          $ref: '#/components/responses/Error444'
+        '445':
+          $ref: '#/components/responses/Error445'
+        '446':
+          $ref: '#/components/responses/Error446'
+        '500':
+          $ref: '#/components/responses/Error500'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+    options:
+      tags:
+      - CORS
+      summary: 'CORS 사전 요청: /auth/refresh'
+      operationId: preflight2
+      security: []
+      responses:
+        '200':
+          $ref: '#/components/responses/CorsSuccess'
+  /auth/logout:
+    post:
+      tags:
+      - Auth
+      summary: Refresh token 폐기
+      operationId: logout
+      description: Bearer 인증 없이 본문 refreshToken을 폐기한다. 본문/토큰이 없으면 폐기 없이 성공한다. 이미 발급된 access token을 즉시 폐기하는 기능은 아니다.
+      security: []
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptySuccess'
+              example:
+                status: '200'
+        '500':
+          $ref: '#/components/responses/Error500'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LogoutRequest'
+    options:
+      tags:
+      - CORS
+      summary: 'CORS 사전 요청: /auth/logout'
+      operationId: preflight3
+      security: []
+      responses:
+        '200':
+          $ref: '#/components/responses/CorsSuccess'
+  /auth/verify:
+    get:
+      tags:
+      - Auth
+      summary: Access token 검증
+      operationId: verifyToken
+      description: 일반 RequireAuthThen 개발용 테스트 토큰 우회를 사용하지 않고 JWT를 직접 검증한다. 누락 441, 유효하지 않음 442, 만료 443.
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifySuccess'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '441':
+          $ref: '#/components/responses/Error441'
+        '442':
+          $ref: '#/components/responses/Error442'
+        '443':
+          $ref: '#/components/responses/Error443'
+        '500':
+          $ref: '#/components/responses/Error500'
+    options:
+      tags:
+      - CORS
+      summary: 'CORS 사전 요청: /auth/verify'
+      operationId: preflight4
+      security: []
+      responses:
+        '200':
+          $ref: '#/components/responses/CorsSuccess'
+  /banners:
+    get:
+      tags:
+      - Banners
+      summary: 배너 목록 조회
+      operationId: listBanners
+      description: 현재 핸들러는 배너가 10개 미만이면 450을 반환한다. DB v002 마이그레이션은 누락된 ID 1~10의 빈 문구 슬롯을 추가하고 기존 문구와 정렬은 보존한다. Client는 빈 문구를 표시하지 않는다. 실제 응답 필드는 id/message/order이며 imageUrl이 아니다.
+      security: []
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BannerListSuccess'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '450':
+          $ref: '#/components/responses/Error450'
+        '500':
+          $ref: '#/components/responses/Error500'
+    options:
+      tags:
+      - CORS
+      summary: 'CORS 사전 요청: /banners'
+      operationId: preflight5
+      security: []
+      responses:
+        '200':
+          $ref: '#/components/responses/CorsSuccess'
+  /banners/{bannerId}:
+    parameters:
+    - $ref: '#/components/parameters/bannerId'
+    put:
+      tags:
+      - Banners
+      summary: 배너 메시지 수정
+      operationId: updateBanner
+      description: message를 변경한다. bannerId 파싱 실패는 540, 변경 행이 0이면 450. 현재 admin role을 검사하지 않는다.
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptySuccess'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '443':
+          $ref: '#/components/responses/Error443'
+        '450':
+          $ref: '#/components/responses/Error450'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '540':
+          $ref: '#/components/responses/Error540'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateBannerRequest'
+    options:
+      tags:
+      - CORS
+      summary: 'CORS 사전 요청: /banners/{bannerId}'
+      operationId: preflight6
+      security: []
+      responses:
+        '200':
+          $ref: '#/components/responses/CorsSuccess'
+  /background:
+    get:
+      tags:
+      - Background
+      summary: 배경 목록 조회
+      operationId: listBackgrounds
+      description: 배경이 3개 미만이면 451을 반환한다.
+      security: []
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BackgroundListSuccess'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '451':
+          $ref: '#/components/responses/Error451'
+        '500':
+          $ref: '#/components/responses/Error500'
+    options:
+      tags:
+      - CORS
+      summary: 'CORS 사전 요청: /background'
+      operationId: preflight7
+      security: []
+      responses:
+        '200':
+          $ref: '#/components/responses/CorsSuccess'
+  /background/{backId}:
+    parameters:
+    - $ref: '#/components/parameters/backId'
+    put:
+      tags:
+      - Background
+      summary: 배경 제목·타입·URL 수정
+      operationId: updateBackground
+      description: title과 url은 공백일 수 없다. type enum이나 URL 형식 검증은 없다. ID 파싱 실패/변경 행 없음은 451.
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptySuccess'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '443':
+          $ref: '#/components/responses/Error443'
+        '451':
+          $ref: '#/components/responses/Error451'
+        '500':
+          $ref: '#/components/responses/Error500'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateBackgroundRequest'
+    options:
+      tags:
+      - CORS
+      summary: 'CORS 사전 요청: /background/{backId}'
+      operationId: preflight8
+      security: []
+      responses:
+        '200':
+          $ref: '#/components/responses/CorsSuccess'
+  /policies:
+    get:
+      tags:
+      - Policies
+      summary: 이용약관·개인정보처리방침 조회
+      operationId: getPolicies
+      description: 문서 URL을 반환하며 DB 행이 없으면 두 필드는 빈 문자열이다.
+      security: []
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicySuccess'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '500':
+          $ref: '#/components/responses/Error500'
+    put:
+      tags:
+      - Policies
+      summary: 정책 문서 URL 수정
+      operationId: updatePolicies
+      description: 앞뒤 공백을 제거한다. 본문 누락/null 또는 빈 필드도 현재는 452로 응답한다.
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptySuccess'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '443':
+          $ref: '#/components/responses/Error443'
+        '452':
+          $ref: '#/components/responses/Error452'
+        '500':
+          $ref: '#/components/responses/Error500'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePolicyRequest'
+    options:
+      tags:
+      - CORS
+      summary: 'CORS 사전 요청: /policies'
+      operationId: preflight9
+      security: []
+      responses:
+        '200':
+          $ref: '#/components/responses/CorsSuccess'
+  /sns-links:
+    get:
+      tags:
+      - SNS
+      summary: SNS 링크 목록 조회
+      operationId: listSnsLinks
+      description: 응답 모델에는 id가 없고 title/url/iconUrl/order만 있다.
+      security: []
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SnsListSuccess'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '500':
+          $ref: '#/components/responses/Error500'
+    put:
+      tags:
+      - SNS
+      summary: SNS 링크 전체 교체
+      operationId: replaceSnsLinks
+      description: 기존 목록을 교체한다. 본문 누락은 453, null 객체/빈 배열은 543. 항목 title/url 공백은 서비스 예외로 500이 될 수 있다. 현재 GET에는 없는
+        id를 PUT은 입력받는다.
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptySuccess'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '443':
+          $ref: '#/components/responses/Error443'
+        '453':
+          $ref: '#/components/responses/Error453'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '543':
+          $ref: '#/components/responses/Error543'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSnsLinksRequest'
+    options:
+      tags:
+      - CORS
+      summary: 'CORS 사전 요청: /sns-links'
+      operationId: preflight10
+      security: []
+      responses:
+        '200':
+          $ref: '#/components/responses/CorsSuccess'
+  /minigames:
+    get:
+      tags:
+      - Minigames
+      summary: 미니게임 목록 및 태그 조회
+      operationId: listMinigames
+      description: 각 필터는 쉼표로 구분된 문자열을 받는다. 페이지네이션 없음. 현재 다종 태그 필터를 함께 쓰면 단일 JOIN 행에 AND 조건이 적용되어 예상과 달리 빈 결과가 될
+        수 있다.
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinigameListSuccess'
+              example:
+                status: '200'
+                data:
+                  total: 0
+                  items: []
+        '401':
+          $ref: '#/components/responses/Error401'
+        '443':
+          $ref: '#/components/responses/Error443'
+        '500':
+          $ref: '#/components/responses/Error500'
+      parameters:
+      - name: scale
+        in: query
+        required: false
+        description: 규모 태그. enum 서버 검증 없음.
+        schema:
+          type: string
+        example: medium
+      - name: difficulty
+        in: query
+        required: false
+        description: 난이도 태그.
+        schema:
+          type: string
+        example: 1,2
+      - name: round
+        in: query
+        required: false
+        description: 라운드 태그.
+        schema:
+          type: string
+        example: 1-2
+      - name: type
+        in: query
+        required: false
+        description: 게임 유형 태그.
+        schema:
+          type: string
+        example: choice,strategy
+      - name: survivalRate
+        in: query
+        required: false
+        description: 생존률 태그.
+        schema:
+          type: string
+        example: medium
+      - name: winCondition
+        in: query
+        required: false
+        description: 승리 조건 태그.
+        schema:
+          type: string
+        example: first
+    post:
+      tags:
+      - Minigames
+      summary: 미니게임 생성
+      operationId: createMinigame
+      description: name 필수·중복 이름은 455. 생성 성공은 201이 아니라 현재 HTTP 200. DB 생성 실패는 544. enabled/pluginId 필드는 아직 없다.
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinigameCreatedSuccess'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '443':
+          $ref: '#/components/responses/Error443'
+        '455':
+          $ref: '#/components/responses/Error455'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '544':
+          $ref: '#/components/responses/Error544'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MinigameWriteRequest'
+    options:
+      tags:
+      - CORS
+      summary: 'CORS 사전 요청: /minigames'
+      operationId: preflight11
+      security: []
+      responses:
+        '200':
+          $ref: '#/components/responses/CorsSuccess'
+  /minigames/{gameId}:
+    parameters:
+    - $ref: '#/components/parameters/gameId'
+    get:
+      tags:
+      - Minigames
+      summary: 미니게임 상세 조회
+      operationId: getMinigame
+      description: ''
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinigameDetailSuccess'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '443':
+          $ref: '#/components/responses/Error443'
+        '454':
+          $ref: '#/components/responses/Error454'
+        '500':
+          $ref: '#/components/responses/Error500'
+    put:
+      tags:
+      - Minigames
+      summary: 미니게임 전체 정보 수정
+      operationId: updateMinigame
+      description: 부분 PATCH가 아니다. 생략한 목록·문자열이 기본값으로 교체될 수 있다.
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MinigameUpdatedSuccess'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '443':
+          $ref: '#/components/responses/Error443'
+        '454':
+          $ref: '#/components/responses/Error454'
+        '455':
+          $ref: '#/components/responses/Error455'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '545':
+          $ref: '#/components/responses/Error545'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MinigameWriteRequest'
+    delete:
+      tags:
+      - Minigames
+      summary: 미니게임 삭제
+      operationId: deleteMinigame
+      description: 미존재/삭제 행 0은 454. 현재 라우트에서 세션 기록 연결이나 사용 중 검사 456을 호출하지 않는다.
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptySuccess'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '443':
+          $ref: '#/components/responses/Error443'
+        '454':
+          $ref: '#/components/responses/Error454'
+        '500':
+          $ref: '#/components/responses/Error500'
+    options:
+      tags:
+      - CORS
+      summary: 'CORS 사전 요청: /minigames/{gameId}'
+      operationId: preflight12
+      security: []
+      responses:
+        '200':
+          $ref: '#/components/responses/CorsSuccess'
+  /minigames/{gameId}/survival-rate:
+    parameters:
+    - $ref: '#/components/parameters/gameId'
+    get:
+      tags:
+      - Survival
+      summary: 게임 생존률 집계 조회
+      operationId: getSurvivalRate
+      description: 게임 또는 통계 행이 없으면 454.
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SurvivalRateSuccess'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '443':
+          $ref: '#/components/responses/Error443'
+        '454':
+          $ref: '#/components/responses/Error454'
+        '500':
+          $ref: '#/components/responses/Error500'
+    post:
+      tags:
+      - Survival
+      summary: 생존률 집계 1회 추가
+      operationId: addSurvivalRate
+      description: totalPlayers > 0, 0 <= survivors <= totalPlayers. 생존률은 survivors/totalPlayers*100으로 누적 계산한다.
+        세션/라운드 ID나 멱등성 키가 없으므로 재전송 시 중복 누적된다.
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SurvivalRateAddedSuccess'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '443':
+          $ref: '#/components/responses/Error443'
+        '454':
+          $ref: '#/components/responses/Error454'
+        '500':
+          $ref: '#/components/responses/Error500'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddSurvivalRateRequest'
+    put:
+      tags:
+      - Survival
+      summary: 생존률 집계 수동 수정
+      operationId: updateSurvivalRate
+      description: 관리 용도지만 현재 admin role 검사는 없다. 집계 3개 정수의 음수만 거부한다. 비율 범위/비율과 인원 일치/생존자가 총원 이내인지 검증하지 않는다.
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SurvivalRateSuccess'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '443':
+          $ref: '#/components/responses/Error443'
+        '454':
+          $ref: '#/components/responses/Error454'
+        '500':
+          $ref: '#/components/responses/Error500'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSurvivalRateRequest'
+    options:
+      tags:
+      - CORS
+      summary: 'CORS 사전 요청: /minigames/{gameId}/survival-rate'
+      operationId: preflight13
+      security: []
+      responses:
+        '200':
+          $ref: '#/components/responses/CorsSuccess'
+  /viewer-avatars:
+    get:
+      tags:
+      - Avatars
+      summary: 시청자 아바타 목록 조회
+      operationId: listViewerAvatars
+      description: ''
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ViewerAvatarListSuccess'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '443':
+          $ref: '#/components/responses/Error443'
+        '500':
+          $ref: '#/components/responses/Error500'
+    put:
+      tags:
+      - Avatars
+      summary: 시청자 아바타 목록 전체 교체
+      operationId: replaceViewerAvatars
+      description: data는 비어 있을 수 없다. order가 중복되면 461. 저장 실패는 546.
+      security:
+      - BearerAuth: []
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmptySuccess'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '443':
+          $ref: '#/components/responses/Error443'
+        '461':
+          $ref: '#/components/responses/Error461'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '546':
+          $ref: '#/components/responses/Error546'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateViewerAvatarsRequest'
+    options:
+      tags:
+      - CORS
+      summary: 'CORS 사전 요청: /viewer-avatars'
+      operationId: preflight14
+      security: []
+      responses:
+        '200':
+          $ref: '#/components/responses/CorsSuccess'
+  /policies/{proxy}:
+    description: SAM의 catch-all 라우트. 현재 Lambda는 이 하위 경로에 업무 기능을 구현하지 않으며 OPTIONS 외에는 403을 반환한다.
+    x-sam-method: ANY
+    parameters:
+    - name: proxy
+      in: path
+      required: true
+      schema:
+        type: string
+      description: SAM {proxy+}의 하위 경로.
+    get:
+      tags:
+      - Routing
+      summary: GET 미지원 하위 경로
+      operationId: policyFallbackGet
+      security: []
+      responses:
+        '403':
+          $ref: '#/components/responses/Error403'
+    post:
+      tags:
+      - Routing
+      summary: POST 미지원 하위 경로
+      operationId: policyFallbackPost
+      security: []
+      responses:
+        '403':
+          $ref: '#/components/responses/Error403'
+    put:
+      tags:
+      - Routing
+      summary: PUT 미지원 하위 경로
+      operationId: policyFallbackPut
+      security: []
+      responses:
+        '403':
+          $ref: '#/components/responses/Error403'
+    delete:
+      tags:
+      - Routing
+      summary: DELETE 미지원 하위 경로
+      operationId: policyFallbackDelete
+      security: []
+      responses:
+        '403':
+          $ref: '#/components/responses/Error403'
+    patch:
+      tags:
+      - Routing
+      summary: PATCH 미지원 하위 경로
+      operationId: policyFallbackPatch
+      security: []
+      responses:
+        '403':
+          $ref: '#/components/responses/Error403'
+    head:
+      tags:
+      - Routing
+      summary: HEAD 미지원 하위 경로
+      operationId: policyFallbackHead
+      security: []
+      responses:
+        '403':
+          $ref: '#/components/responses/Error403'
+    options:
+      tags:
+      - Routing
+      summary: OPTIONS 미지원 하위 경로
+      operationId: policyFallbackOptions
+      security: []
+      responses:
+        '200':
+          $ref: '#/components/responses/CorsSuccess'
+  /sns-links/{proxy}:
+    description: SAM의 catch-all 라우트. 현재 Lambda는 이 하위 경로에 업무 기능을 구현하지 않으며 OPTIONS 외에는 403을 반환한다.
+    x-sam-method: ANY
+    parameters:
+    - name: proxy
+      in: path
+      required: true
+      schema:
+        type: string
+      description: SAM {proxy+}의 하위 경로.
+    get:
+      tags:
+      - Routing
+      summary: GET 미지원 하위 경로
+      operationId: snsFallbackGet
+      security: []
+      responses:
+        '403':
+          $ref: '#/components/responses/Error403'
+    post:
+      tags:
+      - Routing
+      summary: POST 미지원 하위 경로
+      operationId: snsFallbackPost
+      security: []
+      responses:
+        '403':
+          $ref: '#/components/responses/Error403'
+    put:
+      tags:
+      - Routing
+      summary: PUT 미지원 하위 경로
+      operationId: snsFallbackPut
+      security: []
+      responses:
+        '403':
+          $ref: '#/components/responses/Error403'
+    delete:
+      tags:
+      - Routing
+      summary: DELETE 미지원 하위 경로
+      operationId: snsFallbackDelete
+      security: []
+      responses:
+        '403':
+          $ref: '#/components/responses/Error403'
+    patch:
+      tags:
+      - Routing
+      summary: PATCH 미지원 하위 경로
+      operationId: snsFallbackPatch
+      security: []
+      responses:
+        '403':
+          $ref: '#/components/responses/Error403'
+    head:
+      tags:
+      - Routing
+      summary: HEAD 미지원 하위 경로
+      operationId: snsFallbackHead
+      security: []
+      responses:
+        '403':
+          $ref: '#/components/responses/Error403'
+    options:
+      tags:
+      - Routing
+      summary: OPTIONS 미지원 하위 경로
+      operationId: snsFallbackOptions
+      security: []
+      responses:
+        '200':
+          $ref: '#/components/responses/CorsSuccess'
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: GalaShow access token. Swagger Authorize에는 Bearer 접두사 없이 토큰 값만 입력한다. 현재 admin role 강제 검사는 없다.
+  parameters:
+    bannerId:
+      name: bannerId
+      in: path
+      required: true
+      description: C# int로 파싱하는 식별자. 서버는 양수 여부를 별도로 검증하지 않는다.
+      schema:
+        type: integer
+        format: int32
+    backId:
+      name: backId
+      in: path
+      required: true
+      description: C# int로 파싱하는 식별자. 서버는 양수 여부를 별도로 검증하지 않는다.
+      schema:
+        type: integer
+        format: int32
+    gameId:
+      name: gameId
+      in: path
+      required: true
+      description: C# int로 파싱하는 식별자. 서버는 양수 여부를 별도로 검증하지 않는다.
+      schema:
+        type: integer
+        format: int32
+  schemas:
+    ApiError:
+      type: object
+      properties:
+        code:
+          type: string
+          example: '443'
+        message:
+          type: string
+          example: Access token expired
+      required:
+      - code
+      - message
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: '443'
+        error:
+          $ref: '#/components/schemas/ApiError'
+      required:
+      - status
+      - error
+    EmptySuccess:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+          - '200'
+          example: '200'
+      description: ApiResponse 성공 응답. status는 문자열이다. 데이터 없는 성공은 data를 생략한다.
+      required:
+      - status
+    LoginRequest:
+      type: object
+      properties:
+        id:
+          type: string
+          minLength: 1
+          example: streamer-example
+        password:
+          type: string
+          format: password
+          writeOnly: true
+          minLength: 1
+      required:
+      - id
+      - password
+    RefreshRequest:
+      type: object
+      properties:
+        refreshToken:
+          type: string
+          minLength: 1
+          description: 직전 로그인/갱신에서 받은 최신 refresh token.
+      required:
+      - refreshToken
+    LogoutRequest:
+      type: object
+      properties:
+        refreshToken:
+          type: string
+          nullable: true
+          description: 생략 또는 빈 값이면 성공만 반환하고 서버 토큰을 폐기하지 않는다.
+    TokenUser:
+      type: object
+      properties:
+        id:
+          type: string
+        role:
+          type: string
+          description: 현재 로그인/갱신 구현의 역할 문자열. 관리자 역할 강제 검사는 별도 미구현.
+      required:
+      - id
+      - role
+    TokenBundle:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        expiresIn:
+          type: integer
+          format: int32
+          description: access token 남은 수명, 초
+        accessExpiresAt:
+          type: string
+          format: date-time
+          example: '2026-09-29T00:00:00Z'
+        refreshToken:
+          type: string
+        refreshExpiresIn:
+          type: integer
+          format: int32
+          description: refresh token 남은 수명, 초
+        refreshExpiresAt:
+          type: string
+          format: date-time
+          example: '2026-09-29T00:00:00Z'
+        user:
+          $ref: '#/components/schemas/TokenUser'
+      required:
+      - accessToken
+      - expiresIn
+      - accessExpiresAt
+      - refreshToken
+      - refreshExpiresIn
+      - refreshExpiresAt
+      - user
+    TokenSuccess:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+          - '200'
+          example: '200'
+        data:
+          $ref: '#/components/schemas/TokenBundle'
+      description: ApiResponse 성공 응답. status는 문자열이다. 데이터 없는 성공은 data를 생략한다.
+      required:
+      - status
+      - data
+    VerifyData:
+      type: object
+      properties:
+        sub:
+          type: string
+          nullable: true
+        role:
+          type: string
+          nullable: true
+        exp:
+          type: string
+          nullable: true
+          description: JWT exp claim 문자열, Unix epoch 초
+        valid:
+          type: boolean
+      required:
+      - sub
+      - role
+      - exp
+      - valid
+    VerifySuccess:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+          - '200'
+          example: '200'
+        data:
+          $ref: '#/components/schemas/VerifyData'
+      description: ApiResponse 성공 응답. status는 문자열이다. 데이터 없는 성공은 data를 생략한다.
+      required:
+      - status
+      - data
+    Banner:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        message:
+          type: string
+        order:
+          type: integer
+          format: int32
+      required:
+      - id
+      - message
+      - order
+    BannerListSuccess:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+          - '200'
+          example: '200'
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Banner'
+      description: ApiResponse 성공 응답. status는 문자열이다. 데이터 없는 성공은 data를 생략한다.
+      required:
+      - status
+      - data
+    UpdateBannerRequest:
+      type: object
+      properties:
+        message:
+          type: string
+          default: ''
+          description: 현재 핸들러는 공백/빈 문자열을 별도로 거부하지 않는다.
+    Background:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        title:
+          type: string
+        type:
+          type: string
+          description: 문자열. 현재 서버에는 타입 enum 검증 없음.
+        url:
+          type: string
+      required:
+      - id
+      - title
+      - type
+      - url
+    BackgroundListSuccess:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+          - '200'
+          example: '200'
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Background'
+      description: ApiResponse 성공 응답. status는 문자열이다. 데이터 없는 성공은 data를 생략한다.
+      required:
+      - status
+      - data
+    UpdateBackgroundRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+        type:
+          type: string
+          default: ''
+        url:
+          type: string
+          minLength: 1
+      required:
+      - title
+      - url
+    Policy:
+      type: object
+      properties:
+        termsOfService:
+          type: string
+          description: 이용약관 문서 URL 문자열; 저장값이 없으면 빈 문자열.
+        privacyPolicy:
+          type: string
+          description: 개인정보처리방침 문서 URL 문자열; 저장값이 없으면 빈 문자열.
+      required:
+      - termsOfService
+      - privacyPolicy
+    PolicySuccess:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+          - '200'
+          example: '200'
+        data:
+          $ref: '#/components/schemas/Policy'
+      description: ApiResponse 성공 응답. status는 문자열이다. 데이터 없는 성공은 data를 생략한다.
+      required:
+      - status
+      - data
+    UpdatePolicyRequest:
+      type: object
+      properties:
+        termsOfService:
+          type: string
+          minLength: 1
+        privacyPolicy:
+          type: string
+          minLength: 1
+      required:
+      - termsOfService
+      - privacyPolicy
+    SnsLink:
+      type: object
+      properties:
+        title:
+          type: string
+        url:
+          type: string
+        iconUrl:
+          type: string
+        order:
+          type: integer
+          format: int32
+      required:
+      - title
+      - url
+      - iconUrl
+      - order
+    SnsListSuccess:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+          - '200'
+          example: '200'
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/SnsLink'
+      description: ApiResponse 성공 응답. status는 문자열이다. 데이터 없는 성공은 data를 생략한다.
+      required:
+      - status
+      - data
+    SnsLinkInput:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+          default: 0
+        title:
+          type: string
+          minLength: 1
+        url:
+          type: string
+          minLength: 1
+        iconUrl:
+          type: string
+          default: ''
+        order:
+          type: integer
+          format: int32
+          default: 0
+      required:
+      - title
+      - url
+    UpdateSnsLinksRequest:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/SnsLinkInput'
+          minItems: 1
+      description: 전체 목록 교체. GET 응답에는 id가 없지만 PUT 입력 모델에는 id가 있다.
+      required:
+      - data
+    MinigameTags:
+      type: object
+      properties:
+        scale:
+          type: array
+          items:
+            type: string
+        difficulty:
+          type: array
+          items:
+            type: string
+        round:
+          type: array
+          items:
+            type: string
+        type:
+          type: array
+          items:
+            type: string
+        survivalRate:
+          type: array
+          items:
+            type: string
+        winCondition:
+          type: array
+          items:
+            type: string
+    MinigameTutorial:
+      type: object
+      properties:
+        step:
+          type: integer
+          format: int32
+        description:
+          type: string
+    MinigameControl:
+      type: object
+      properties:
+        keyName:
+          type: string
+        key:
+          type: array
+          items:
+            type: string
+    AnyJson:
+      description: C# JsonElement? 원문 값. object/array/scalar/null을 저장할 수 있고 현재 게임별 schema 검증은 없다.
+    MinigameWriteRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: string
+          default: ''
+        videoUrl:
+          type: string
+          default: ''
+        logoUrl:
+          type: string
+          default: ''
+        tags:
+          $ref: '#/components/schemas/MinigameTags'
+        phaseData:
+          $ref: '#/components/schemas/AnyJson'
+        gameData:
+          $ref: '#/components/schemas/AnyJson'
+        tutorial:
+          type: array
+          items:
+            $ref: '#/components/schemas/MinigameTutorial'
+        controls:
+          type: array
+          items:
+            $ref: '#/components/schemas/MinigameControl'
+      description: POST/PUT 공통 필드. PUT은 PATCH가 아니며 생략된 목록/문자열에 DTO 기본값이 적용될 수 있다. phaseData/gameData 시간·구조는 서버가
+        검증하지 않는다.
+      required:
+      - name
+    Minigame:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        name:
+          type: string
+          minLength: 1
+        description:
+          type: string
+          default: ''
+        videoUrl:
+          type: string
+          default: ''
+        logoUrl:
+          type: string
+          default: ''
+        tags:
+          $ref: '#/components/schemas/MinigameTags'
+        phaseData:
+          $ref: '#/components/schemas/AnyJson'
+        gameData:
+          $ref: '#/components/schemas/AnyJson'
+        tutorial:
+          type: array
+          items:
+            $ref: '#/components/schemas/MinigameTutorial'
+        controls:
+          type: array
+          items:
+            $ref: '#/components/schemas/MinigameControl'
+        createdAt:
+          type: string
+          format: date-time
+          example: '2026-09-29T00:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          example: '2026-09-29T00:00:00Z'
+      required:
+      - id
+      - name
+      - description
+      - videoUrl
+      - logoUrl
+      - tags
+      - phaseData
+      - gameData
+      - tutorial
+      - controls
+      - createdAt
+      - updatedAt
+    MinigameListData:
+      type: object
+      properties:
+        total:
+          type: integer
+          format: int32
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Minigame'
+      required:
+      - total
+      - items
+    MinigameListSuccess:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+          - '200'
+          example: '200'
+        data:
+          $ref: '#/components/schemas/MinigameListData'
+      description: ApiResponse 성공 응답. status는 문자열이다. 데이터 없는 성공은 data를 생략한다.
+      required:
+      - status
+      - data
+    MinigameDetailSuccess:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+          - '200'
+          example: '200'
+        data:
+          $ref: '#/components/schemas/Minigame'
+      description: ApiResponse 성공 응답. status는 문자열이다. 데이터 없는 성공은 data를 생략한다.
+      required:
+      - status
+      - data
+    MinigameCreated:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        name:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+          example: '2026-09-29T00:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          example: '2026-09-29T00:00:00Z'
+      required:
+      - id
+      - name
+      - createdAt
+      - updatedAt
+    MinigameUpdated:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        name:
+          type: string
+        updatedAt:
+          type: string
+          format: date-time
+          example: '2026-09-29T00:00:00Z'
+      required:
+      - id
+      - name
+      - updatedAt
+    MinigameCreatedSuccess:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+          - '200'
+          example: '200'
+        data:
+          $ref: '#/components/schemas/MinigameCreated'
+      description: ApiResponse 성공 응답. status는 문자열이다. 데이터 없는 성공은 data를 생략한다.
+      required:
+      - status
+      - data
+    MinigameUpdatedSuccess:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+          - '200'
+          example: '200'
+        data:
+          $ref: '#/components/schemas/MinigameUpdated'
+      description: ApiResponse 성공 응답. status는 문자열이다. 데이터 없는 성공은 data를 생략한다.
+      required:
+      - status
+      - data
+    AddSurvivalRateRequest:
+      type: object
+      properties:
+        totalPlayers:
+          type: integer
+          format: int32
+          minimum: 1
+        survivors:
+          type: integer
+          format: int32
+          minimum: 0
+          default: 0
+          description: totalPlayers 이하여야 한다. 생략 시 C# 기본값 0.
+      required:
+      - totalPlayers
+    UpdateSurvivalRateRequest:
+      type: object
+      properties:
+        survivalRate:
+          type: number
+          default: 0
+          description: 퍼센트 수치. 현재 서버는 0~100 범위나 집계와의 일치를 검증하지 않는다.
+        totalGames:
+          type: integer
+          format: int32
+          minimum: 0
+          default: 0
+        totalPlayers:
+          type: integer
+          format: int32
+          minimum: 0
+          default: 0
+        survivors:
+          type: integer
+          format: int32
+          minimum: 0
+          default: 0
+      description: 네 필드의 값을 그대로 설정한다. 생략된 값은 0. 현재 survivors <= totalPlayers 검증도 없다.
+    SurvivalRate:
+      type: object
+      properties:
+        gameId:
+          type: integer
+          format: int32
+        gameName:
+          type: string
+        survivalRate:
+          type: number
+          description: 퍼센트 수치
+        totalGames:
+          type: integer
+          format: int32
+        totalPlayers:
+          type: integer
+          format: int32
+        survivors:
+          type: integer
+          format: int32
+        lastUpdated:
+          type: string
+          format: date-time
+          example: '2026-09-29T00:00:00Z'
+      required:
+      - gameId
+      - gameName
+      - survivalRate
+      - totalGames
+      - totalPlayers
+      - survivors
+      - lastUpdated
+    AddedGame:
+      type: object
+      properties:
+        totalPlayers:
+          type: integer
+          format: int32
+        survivors:
+          type: integer
+          format: int32
+        rate:
+          type: number
+          description: survivors / totalPlayers * 100
+      required:
+      - totalPlayers
+      - survivors
+      - rate
+    SurvivalRateAdded:
+      type: object
+      properties:
+        gameId:
+          type: integer
+          format: int32
+        survivalRate:
+          type: number
+        previousRate:
+          type: number
+        totalGames:
+          type: integer
+          format: int32
+        totalPlayers:
+          type: integer
+          format: int32
+        survivors:
+          type: integer
+          format: int32
+        addedGame:
+          $ref: '#/components/schemas/AddedGame'
+        updatedAt:
+          type: string
+          format: date-time
+          example: '2026-09-29T00:00:00Z'
+      required:
+      - gameId
+      - survivalRate
+      - previousRate
+      - totalGames
+      - totalPlayers
+      - survivors
+      - addedGame
+      - updatedAt
+    SurvivalRateSuccess:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+          - '200'
+          example: '200'
+        data:
+          $ref: '#/components/schemas/SurvivalRate'
+      description: ApiResponse 성공 응답. status는 문자열이다. 데이터 없는 성공은 data를 생략한다.
+      required:
+      - status
+      - data
+    SurvivalRateAddedSuccess:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+          - '200'
+          example: '200'
+        data:
+          $ref: '#/components/schemas/SurvivalRateAdded'
+      description: ApiResponse 성공 응답. status는 문자열이다. 데이터 없는 성공은 data를 생략한다.
+      required:
+      - status
+      - data
+    ViewerAvatar:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+        order:
+          type: integer
+          format: int32
+        name:
+          type: string
+        gifUrl:
+          type: string
+      required:
+      - id
+      - order
+      - name
+      - gifUrl
+    ViewerAvatarInput:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int32
+          default: 0
+        order:
+          type: integer
+          format: int32
+          default: 0
+        name:
+          type: string
+          default: ''
+        gifUrl:
+          type: string
+          default: ''
+    ViewerAvatarListSuccess:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+          - '200'
+          example: '200'
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ViewerAvatar'
+      description: ApiResponse 성공 응답. status는 문자열이다. 데이터 없는 성공은 data를 생략한다.
+      required:
+      - status
+      - data
+    UpdateViewerAvatarsRequest:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ViewerAvatarInput'
+          minItems: 1
+      required:
+      - data
+  responses:
+    Error400:
+      description: BadRequest
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: '400'
+            error:
+              code: '400'
+              message: Bad request
+    Error401:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: '401'
+            error:
+              code: '401'
+              message: Unauthorized
+    Error403:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: '403'
+            error:
+              code: '403'
+              message: Forbidden
+    Error409:
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: '409'
+            error:
+              code: '409'
+              message: Conflict
+    Error429:
+      description: TooManyRequests
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: '429'
+            error:
+              code: '429'
+              message: Too many requests
+    Error500:
+      description: Internal
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: '500'
+            error:
+              code: '500'
+              message: Internal server error
+    Error503:
+      description: ServiceUnavailable
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: '503'
+            error:
+              code: '503'
+              message: Service unavailable
+    Error440:
+      description: AuthInvalidCredentials (현재 구현의 사용자 정의 HTTP 상태)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: '440'
+            error:
+              code: '440'
+              message: Invalid credentials
+    Error441:
+      description: AuthTokenMissing (현재 구현의 사용자 정의 HTTP 상태)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: '441'
+            error:
+              code: '441'
+              message: Missing access token
+    Error442:
+      description: AuthTokenInvalid (현재 구현의 사용자 정의 HTTP 상태)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: '442'
+            error:
+              code: '442'
+              message: Invalid access token
+    Error443:
+      description: AuthTokenExpired (현재 구현의 사용자 정의 HTTP 상태)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: '443'
+            error:
+              code: '443'
+              message: Access token expired
+    Error444:
+      description: AuthRefreshInvalid (현재 구현의 사용자 정의 HTTP 상태)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: '444'
+            error:
+              code: '444'
+              message: Invalid refresh token
+    Error445:
+      description: AuthRefreshExpired (현재 구현의 사용자 정의 HTTP 상태)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: '445'
+            error:
+              code: '445'
+              message: Refresh token expired
+    Error446:
+      description: AuthRefreshRevoked (현재 구현의 사용자 정의 HTTP 상태)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: '446'
+            error:
+              code: '446'
+              message: Refresh token revoked
+    Error450:
+      description: BannerNotFound (현재 구현의 사용자 정의 HTTP 상태)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: '450'
+            error:
+              code: '450'
+              message: Banner not found
+    Error451:
+      description: BackgroundNotFound (현재 구현의 사용자 정의 HTTP 상태)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: '451'
+            error:
+              code: '451'
+              message: Background not found
+    Error452:
+      description: PolicyNotFound (현재 구현의 사용자 정의 HTTP 상태)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: '452'
+            error:
+              code: '452'
+              message: Policy not found
+    Error453:
+      description: SnsLinkNotFound (현재 구현의 사용자 정의 HTTP 상태)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: '453'
+            error:
+              code: '453'
+              message: SnsLink not found
+    Error454:
+      description: MinigameNotFound (현재 구현의 사용자 정의 HTTP 상태)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: '454'
+            error:
+              code: '454'
+              message: Minigame not found
+    Error460:
+      description: AvatarNotFound (현재 구현의 사용자 정의 HTTP 상태)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: '460'
+            error:
+              code: '460'
+              message: Avatar not found
+    Error455:
+      description: MinigameAlreadyExists (현재 구현의 사용자 정의 HTTP 상태)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: '455'
+            error:
+              code: '455'
+              message: Minigame already exists
+    Error456:
+      description: MinigameInUse (현재 구현의 사용자 정의 HTTP 상태)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: '456'
+            error:
+              code: '456'
+              message: Minigame is in use
+    Error457:
+      description: MinigameInvalidTags (현재 구현의 사용자 정의 HTTP 상태)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: '457'
+            error:
+              code: '457'
+              message: Invalid minigame tags
+    Error461:
+      description: AvatarDuplicateOrder (현재 구현의 사용자 정의 HTTP 상태)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: '461'
+            error:
+              code: '461'
+              message: Duplicate avatar order
+    Error540:
+      description: BannerUpdateFailed (현재 구현의 사용자 정의 HTTP 상태)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: '540'
+            error:
+              code: '540'
+              message: Failed to update banner
+    Error541:
+      description: BackgroundUpdateFailed (현재 구현의 사용자 정의 HTTP 상태)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: '541'
+            error:
+              code: '541'
+              message: Failed to update background
+    Error542:
+      description: PolicyUpdateFailed (현재 구현의 사용자 정의 HTTP 상태)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: '542'
+            error:
+              code: '542'
+              message: Failed to update policy
+    Error543:
+      description: SnsLinkUpdateFailed (현재 구현의 사용자 정의 HTTP 상태)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: '543'
+            error:
+              code: '543'
+              message: Failed to update SnsLink
+    Error544:
+      description: MinigameCreateFailed (현재 구현의 사용자 정의 HTTP 상태)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: '544'
+            error:
+              code: '544'
+              message: Failed to create minigame
+    Error545:
+      description: MinigameUpdateFailed (현재 구현의 사용자 정의 HTTP 상태)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: '545'
+            error:
+              code: '545'
+              message: Failed to update minigame
+    Error546:
+      description: AvatarUpdateFailed (현재 구현의 사용자 정의 HTTP 상태)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: '546'
+            error:
+              code: '546'
+              message: Failed to update avatar
+    CorsSuccess:
+      description: DB 초기화 없이 반환하는 CORS preflight 응답. CORS_ALLOWED_ORIGINS 또는 환경 기본 목록에 있는 Origin에만 허용 헤더를 추가한다.
+        운영은 loopback origin을 제외한다.
+      headers:
+        Access-Control-Allow-Origin:
+          description: Origin이 서버 허용 목록에 있을 때만 반환. 실제 허용 목록은 환경 설정에 따른다.
+          schema:
+            type: string
+        Access-Control-Allow-Credentials:
+          schema:
+            type: string
+            example: 'true'
+        Access-Control-Allow-Headers:
+          schema:
+            type: string
+            example: Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token
+        Access-Control-Allow-Methods:
+          schema:
+            type: string
+            example: GET,POST,PUT,DELETE,OPTIONS
+        Vary:
+          description: Origin에 따라 응답 헤더가 달라짐. 기존 Vary 값이 있으면 Origin을 추가한다.
+          schema:
+            type: string
+          example: Origin
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/EmptySuccess'
+          example:
+            status: '200'
+x-source-files:
+- API/template.yaml
+- API/src/GalaShow.*/Function.cs
+- API/src/GalaShow.Common/Models/
+- API/src/GalaShow.Common/Errors/
+- API/src/GalaShow.Common/Service/
+x-sam-any-methods:
+- GET
+- POST
+- PUT
+- DELETE
+- PATCH
+- HEAD
+- OPTIONS
+x-undocumented-sam-methods:
+  TRACE: SAM ANY가 수용할 수 있으나 문서의 지원 메서드 범위에서 제외.

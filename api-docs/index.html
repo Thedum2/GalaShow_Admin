@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>GALASHOW Backend API — Swagger (dev)</title>
+    <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.33.0/swagger-ui.css" />
+    <style>
+      body { margin: 0; background: #fafafa; color: #263238; font-family: system-ui, sans-serif; }
+      header { padding: 20px 24px; background: #fff; border-bottom: 1px solid #ddd; }
+      h1 { margin: 0 0 8px; font-size: 22px; }
+      header p { margin: 8px 0; line-height: 1.6; }
+      a { color: #145ca4; }
+      #status { margin: 20px 24px; }
+      .swagger-ui .topbar { display: none; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>GALASHOW Backend API (개발)</h1>
+      <p>현재 구현 기준 HTTP API 문서 · <a href="./swagger.yaml">OpenAPI YAML</a></p>
+      <p>기본 서버는 개발 API(<code>https://api-dev.galashow.cloud</code>)입니다. 인증이 필요한 API는 <code>/auth/login</code>으로 받은 access token을 Authorize에 입력합니다. 쓰기 요청은 개발 데이터를 실제로 변경합니다.</p>
+    </header>
+    <p id="status" role="status">Swagger UI를 불러오는 중입니다.</p>
+    <noscript>이 화면을 보려면 JavaScript를 사용 설정하거나 OpenAPI YAML을 별도 도구에서 열어 주세요.</noscript>
+    <div id="swagger-ui"></div>
+    <script>
+      const statusElement = document.getElementById("status");
+      const script = document.createElement("script");
+      script.src = "https://unpkg.com/swagger-ui-dist@5.33.0/swagger-ui-bundle.js";
+      script.onerror = () => {
+        statusElement.textContent = "Swagger UI를 불러오지 못했습니다. 인터넷 연결과 CDN 접근을 확인하거나 OpenAPI YAML을 별도 도구에서 열어 주세요.";
+      };
+      script.onload = () => {
+        statusElement.hidden = true;
+        window.ui = SwaggerUIBundle({
+          url: "./swagger.yaml",
+          dom_id: "#swagger-ui",
+          deepLinking: true,
+          filter: true,
+          docExpansion: "none",
+          displayRequestDuration: true,
+          validatorUrl: null,
+          persistAuthorization: false
+        });
+      };
+      document.head.appendChild(script);
+    </script>
+  </body>
+</html>

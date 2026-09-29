@@ -2,8 +2,9 @@ import {defineConfig} from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'node:path'
 import autoprefixer from 'autoprefixer'
+import { apiDocs } from './vite/apiDocs.mjs'
 
-export default defineConfig(() => {
+export default defineConfig(({ mode }) => {
   return {
     base: '/',
     build: {
@@ -29,7 +30,7 @@ export default defineConfig(() => {
         },
       },
     },
-    plugins: [react()],
+    plugins: [react(), apiDocs({ mode, root: __dirname })],
     resolve: {
       alias: [
         {
