@@ -13,13 +13,15 @@
   "license": "MIT",
   "author": "The CoreUI Team (https://github.com/orgs/coreui/people)",
   "scripts": {
-    "dev": "vite --mode dev",
-    "start": "vite --mode dev",
+    "test": "node --experimental-vm-modules --test test/*.test.mjs",
+    "dev": "vite --mode development",
+    "start": "vite --mode development",
     "start:prod": "vite build --mode production && vite preview --mode production",
     "build": "vite build --mode production",
+    "build:prod": "vite build --mode production",
     "build:dev": "vite build --mode development",
     "preview": "vite preview --mode production",
-    "serve:dev": "vite preview --mode dev",
+    "serve:dev": "vite preview --mode development",
     "lint": "eslint"
   },
   "dependencies": {

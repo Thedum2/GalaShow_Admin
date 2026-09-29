@@ -7,8 +7,15 @@ import routes from '../routes'
 
 const AppContent = () => {
   return (
-    <CContainer className="px-4" lg>
-      <Suspense fallback={<CSpinner color="primary" />}>
+    <CContainer className="workspace-content" fluid>
+      <Suspense
+        fallback={
+          <div className="workspace-loading" role="status">
+            <CSpinner color="primary" />
+            <span>화면을 불러오는 중입니다.</span>
+          </div>
+        }
+      >
         <Routes>
           {routes.map((route, idx) => {
             return (

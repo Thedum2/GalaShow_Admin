@@ -1,5 +1,6 @@
 ﻿import axios from 'axios';
 import { unwrap } from './unwrap';
+import { API_BASE_URL } from '../lib/env'
 import {
   getAccessToken,
   getRefreshToken,
@@ -7,7 +8,7 @@ import {
   clearTokens,
 } from './tokenStorage';
 
-const BASE_URL = import.meta.env.VITE_API_URL;
+const BASE_URL = API_BASE_URL;
 
 export const api = axios.create({
   baseURL: BASE_URL,

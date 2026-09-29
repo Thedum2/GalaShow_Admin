@@ -1,79 +1,132 @@
-﻿name: Deploy Galashow admin to S3
+name: GalaShow Admin CI/CD
 
 on:
+  pull_request:
+  push:
+    branches: [develop]
   workflow_dispatch:
     inputs:
       stage:
-        description: "Deploy Stage"
+        description: Deploy stage
         required: true
-        default: "dev"
+        default: dev
         type: choice
-        options:
-          - dev
-          - prod
+        options: [dev, prod]
+
+permissions:
+  contents: read
 
 jobs:
-  deploy:
+  validate:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm test
+
+      - name: Build both environments
+        run: |
+          npm run build:dev
+          npm run build:prod
+
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      id-token: write
+    concurrency:
+      group: deploy-admin-${{ inputs.stage || 'dev' }}
+      cancel-in-progress: false
+    environment:
+      name: ${{ inputs.stage || 'dev' }}
+      url: ${{ inputs.stage == 'prod' && 'https://admin.galashow.cloud' || 'https://admin-dev.galashow.cloud' }}
     env:
       AWS_REGION: ap-northeast-2
+      AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
+      AWS_ROLE_ARN: ${{ vars.AWS_ROLE_ARN }}
+      DEPLOY_STAGE: ${{ inputs.stage || 'dev' }}
 
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.branch }}
+          persist-credentials: false
+
+      - name: Validate deployment configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$DEPLOY_STAGE" == dev || "$DEPLOY_STAGE" == prod ]] || { echo "Invalid stage" >&2; exit 1; }
+          [[ "$AWS_ACCOUNT_ID" =~ ^[0-9]{12}$ ]] || { echo "Set AWS_ACCOUNT_ID in the GitHub environment" >&2; exit 1; }
+          [[ "$AWS_ROLE_ARN" == "arn:aws:iam::$AWS_ACCOUNT_ID:role/"* ]] || { echo "Set AWS_ROLE_ARN for the expected account" >&2; exit 1; }
 
       - name: Setup Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: 18
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Generate .env file
-        run: |
-          if [ "${{ inputs.stage }}" = "prod" ]; then
-            echo "VITE_API_URL=${{ secrets.VITE_API_URL_PROD }}" >> .env.production
-            echo "VITE_MODE=production" >> .env.production
-          else
-            echo "VITE_API_URL=${{ secrets.VITE_API_URL_DEV }}" >> .env.development
-            echo "VITE_MODE=development" >> .env.development
-          fi
-
-      - name: Build project
-        run: |
-          if [ "${{ inputs.stage }}" = "prod" ]; then
-            npm run build
-          else
-            npm run build:dev
-          fi
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Build deployment bundle
+        run: npm run "build:$DEPLOY_STAGE"
 
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          allowed-account-ids: ${{ vars.AWS_ACCOUNT_ID }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Deploy to S3
+      - name: Resolve and verify deployment targets
+        shell: bash
         run: |
-          if [ "${{ inputs.stage }}" = "prod" ]; then
-            aws s3 sync build s3://${{ secrets.S3_BUCKET_PROD }} --delete
-          else
-            aws s3 sync build s3://${{ secrets.S3_BUCKET_DEV }} --delete
-          fi
+          set -euo pipefail
+          [[ "$(aws sts get-caller-identity --query Account --output text)" == "$AWS_ACCOUNT_ID" ]]
+          STACK_NAME="galashow-cloud-web-$DEPLOY_STAGE"
+          OUTPUTS=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --query 'Stacks[0].Outputs' --output json)
+          S3_BUCKET=$(jq -r '.[] | select(.OutputKey == "AdminBucket") | .OutputValue' <<< "$OUTPUTS")
+          DISTRIBUTION_ID=$(jq -r '.[] | select(.OutputKey == "AdminDistributionId") | .OutputValue' <<< "$OUTPUTS")
+          SITE_URL=$(jq -r '.[] | select(.OutputKey == "AdminUrl") | .OutputValue' <<< "$OUTPUTS")
+          EXPECTED_URL="https://admin-dev.galashow.cloud"
+          if [[ "$DEPLOY_STAGE" == prod ]]; then EXPECTED_URL="https://admin.galashow.cloud"; fi
+          [[ "$S3_BUCKET" == "galashow-$AWS_ACCOUNT_ID-$DEPLOY_STAGE-admin" ]] || { echo "Unexpected bucket" >&2; exit 1; }
+          [[ "$DISTRIBUTION_ID" =~ ^[A-Z0-9]+$ && "$SITE_URL" == "$EXPECTED_URL" ]] || { echo "Unexpected CloudFormation outputs" >&2; exit 1; }
+          aws s3api head-bucket --bucket "$S3_BUCKET" --expected-bucket-owner "$AWS_ACCOUNT_ID"
+          printf 'S3_BUCKET=%s\nDISTRIBUTION_ID=%s\nSITE_URL=%s\n' "$S3_BUCKET" "$DISTRIBUTION_ID" "$SITE_URL" >> "$GITHUB_ENV"
+
+      - name: Deploy to S3
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s build/index.html
+          aws s3 sync build/ "s3://$S3_BUCKET" --delete
+          aws s3 cp build/index.html "s3://$S3_BUCKET/index.html" --content-type text/html --cache-control 'no-cache'
 
       - name: Invalidate CloudFront cache
+        shell: bash
         run: |
-          if [ "${{ inputs.stage }}" = "prod" ]; then
-            aws cloudfront create-invalidation \
-              --distribution-id ${{ secrets.DISTRIBUTION_ID_PROD }} \
-              --paths "/*"
-          else
-            aws cloudfront create-invalidation \
-              --distribution-id ${{ secrets.DISTRIBUTION_ID_DEV }} \
-              --paths "/*"
-          fi
+          set -euo pipefail
+          INVALIDATION_ID=$(aws cloudfront create-invalidation --distribution-id "$DISTRIBUTION_ID" --paths '/*' --query 'Invalidation.Id' --output text)
+          aws cloudfront wait invalidation-completed --distribution-id "$DISTRIBUTION_ID" --id "$INVALIDATION_ID"
+
+      - name: Check deployed site
+
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --retry 3 "$SITE_URL/" -o /tmp/site.html
+          grep -q '<div id="root">' /tmp/site.html
+          curl --fail --silent --show-error --retry 3 "$SITE_URL/login" -o /tmp/spa.html
+          cmp /tmp/site.html /tmp/spa.html
+          printf '### Admin deployed\n- Stage: %s\n- URL: %s\n- Commit: %s\n' "$DEPLOY_STAGE" "$SITE_URL" "$GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"

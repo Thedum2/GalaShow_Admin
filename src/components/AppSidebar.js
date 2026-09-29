@@ -1,6 +1,6 @@
 import React from 'react'
-import {useSelector, useDispatch} from 'react-redux'
-
+import { Link } from 'react-router-dom'
+import { useSelector, useDispatch } from 'react-redux'
 import {
   CCloseButton,
   CSidebar,
@@ -9,13 +9,9 @@ import {
   CSidebarHeader,
   CSidebarToggler,
 } from '@coreui/react'
-import CIcon from '@coreui/icons-react'
-
-import {AppSidebarNav} from './AppSidebarNav'
-
+import { AppSidebarNav } from './AppSidebarNav'
+import GalaBrand from './GalaBrand'
 import navigation from '../_nav'
-import Logo from "src/assets/brand/Logo";
-import {isDev} from "src/lib/env";
 
 const AppSidebar = () => {
   const dispatch = useDispatch()
@@ -24,41 +20,38 @@ const AppSidebar = () => {
 
   return (
     <CSidebar
-      className="border-end"
-      colorScheme={isDev?'dark':'light'}
+      id="workspace-sidebar"
+      className="workspace-sidebar"
+      colorScheme="dark"
       position="fixed"
       unfoldable={unfoldable}
       visible={sidebarShow}
-      onVisibleChange={(visible) => {
-        dispatch({type: 'set', sidebarShow: visible})
-      }}
+      onVisibleChange={(visible) => dispatch({ type: 'set', sidebarShow: visible })}
     >
-
-      <CSidebarBrand className="d-flex align-items-center justify-content-center"
-      >
-        <div
-          className="me-2"
-          style={{
-            width: '150',
-            height: '150',
-            overflow: 'hidden',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <Logo style={{ width: '100%', height: '100%' }} />
-        </div>
-      </CSidebarBrand>
-      <CSidebarBrand className="d-flex align-items-center justify-content-center border-bottom">
-        <span className="fs-5 semibold">Galashow Admin</span>
-      </CSidebarBrand>
-
-
-      <AppSidebarNav items={navigation}/>
-      <CSidebarFooter className="border-top d-none d-lg-flex">
+      <CSidebarHeader>
+        <CSidebarBrand as={Link} to="/dashboard" aria-label="GALASHOW 대시보드">
+          <GalaBrand />
+        </CSidebarBrand>
+        <CCloseButton
+          className="d-lg-none"
+          aria-label="메뉴 닫기"
+          onClick={() => dispatch({ type: 'set', sidebarShow: false })}
+        />
+      </CSidebarHeader>
+      <div className="sidebar-workspace-note">
+        <span className="workspace-note-star" aria-hidden="true">
+          ✦
+        </span>
+        <span>
+          <strong>GalaShow Workspace</strong>
+        </span>
+      </div>
+      <AppSidebarNav items={navigation} />
+      <CSidebarFooter>
         <CSidebarToggler
-          onClick={() => dispatch({type: 'set', sidebarUnfoldable: !unfoldable})}
+          className="d-none d-lg-block"
+          aria-label={unfoldable ? '메뉴 펼치기' : '메뉴 접기'}
+          onClick={() => dispatch({ type: 'set', sidebarUnfoldable: !unfoldable })}
         />
       </CSidebarFooter>
     </CSidebar>

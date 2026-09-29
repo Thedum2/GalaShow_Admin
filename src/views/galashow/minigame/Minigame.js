@@ -173,12 +173,24 @@ const Minigame = () => {
         }
 
         return {
-          scale: Array.isArray(tags.scale) ? tags.scale : (tags.scale ? [tags.scale] : []),
-          difficulty: Array.isArray(tags.difficulty) ? tags.difficulty : (tags.difficulty ? [tags.difficulty] : []),
-          round: Array.isArray(tags.round) ? tags.round : (tags.round ? [tags.round] : []),
-          type: Array.isArray(tags.type) ? tags.type : (tags.type ? [tags.type] : []),
-          survivalRate: Array.isArray(tags.survivalRate) ? tags.survivalRate : (tags.survivalRate ? [tags.survivalRate] : []),
-          winCondition: Array.isArray(tags.winCondition) ? tags.winCondition : (tags.winCondition ? [tags.winCondition] : []),
+          scale: Array.isArray(tags.scale) ? tags.scale : tags.scale ? [tags.scale] : [],
+          difficulty: Array.isArray(tags.difficulty)
+            ? tags.difficulty
+            : tags.difficulty
+              ? [tags.difficulty]
+              : [],
+          round: Array.isArray(tags.round) ? tags.round : tags.round ? [tags.round] : [],
+          type: Array.isArray(tags.type) ? tags.type : tags.type ? [tags.type] : [],
+          survivalRate: Array.isArray(tags.survivalRate)
+            ? tags.survivalRate
+            : tags.survivalRate
+              ? [tags.survivalRate]
+              : [],
+          winCondition: Array.isArray(tags.winCondition)
+            ? tags.winCondition
+            : tags.winCondition
+              ? [tags.winCondition]
+              : [],
         }
       }
 
@@ -294,10 +306,7 @@ const Minigame = () => {
   const handleAddTutorial = () => {
     setFormData({
       ...formData,
-      tutorial: [
-        ...formData.tutorial,
-        { step: formData.tutorial.length + 1, description: '' },
-      ],
+      tutorial: [...formData.tutorial, { step: formData.tutorial.length + 1, description: '' }],
     })
   }
 
@@ -407,7 +416,7 @@ const Minigame = () => {
                 alignItems: 'center',
                 gap: '8px',
                 padding: '8px 12px',
-                backgroundColor: '#f8f9fa',
+                backgroundColor: 'var(--cui-tertiary-bg)',
                 borderRadius: '6px',
                 borderLeft: `4px solid var(--cui-${TAG_COLORS[key] || 'secondary'})`,
               }}
@@ -417,7 +426,7 @@ const Minigame = () => {
                   fontWeight: 'bold',
                   fontSize: '0.9rem',
                   minWidth: '80px',
-                  color: '#495057',
+                  color: 'var(--cui-secondary-color)',
                 }}
               >
                 {TAG_LABELS[key]}
@@ -478,7 +487,7 @@ const Minigame = () => {
                   <div style={{ marginBottom: '16px' }}>
                     <strong
                       style={{
-                        color: '#495057',
+                        color: 'var(--cui-secondary-color)',
                         display: 'block',
                         marginBottom: '8px',
                         fontSize: '1rem',
@@ -489,10 +498,10 @@ const Minigame = () => {
                     <div
                       style={{
                         padding: '16px',
-                        backgroundColor: '#f8f9fa',
+                        backgroundColor: 'var(--cui-tertiary-bg)',
                         borderRadius: '8px',
                         borderLeft: '4px solid #0d6efd',
-                        color: '#212529',
+                        color: 'var(--cui-body-color)',
                         lineHeight: '1.6',
                         fontSize: '0.95rem',
                       }}
@@ -505,13 +514,19 @@ const Minigame = () => {
                 {/* 로고 이미지 */}
                 {selectedGame.logoUrl && (
                   <div style={{ marginBottom: '16px' }}>
-                    <strong style={{ color: '#495057', display: 'block', marginBottom: '8px' }}>
+                    <strong
+                      style={{
+                        color: 'var(--cui-secondary-color)',
+                        display: 'block',
+                        marginBottom: '8px',
+                      }}
+                    >
                       로고:
                     </strong>
                     <div
                       style={{
                         padding: '16px',
-                        backgroundColor: '#f8f9fa',
+                        backgroundColor: 'var(--cui-tertiary-bg)',
                         borderRadius: '8px',
                         textAlign: 'center',
                       }}
@@ -534,7 +549,13 @@ const Minigame = () => {
                         이미지를 불러올 수 없습니다
                       </div>
                     </div>
-                    <small style={{ color: '#6c757d', display: 'block', marginTop: '4px' }}>
+                    <small
+                      style={{
+                        color: 'var(--cui-secondary-color)',
+                        display: 'block',
+                        marginTop: '4px',
+                      }}
+                    >
                       {selectedGame.logoUrl}
                     </small>
                   </div>
@@ -543,13 +564,19 @@ const Minigame = () => {
                 {/* 동영상 */}
                 {selectedGame.videoUrl && (
                   <div style={{ marginBottom: '16px' }}>
-                    <strong style={{ color: '#495057', display: 'block', marginBottom: '8px' }}>
+                    <strong
+                      style={{
+                        color: 'var(--cui-secondary-color)',
+                        display: 'block',
+                        marginBottom: '8px',
+                      }}
+                    >
                       동영상:
                     </strong>
                     <div
                       style={{
                         padding: '16px',
-                        backgroundColor: '#f8f9fa',
+                        backgroundColor: 'var(--cui-tertiary-bg)',
                         borderRadius: '8px',
                       }}
                     >
@@ -573,7 +600,13 @@ const Minigame = () => {
                         동영상을 불러올 수 없습니다
                       </div>
                     </div>
-                    <small style={{ color: '#6c757d', display: 'block', marginTop: '4px' }}>
+                    <small
+                      style={{
+                        color: 'var(--cui-secondary-color)',
+                        display: 'block',
+                        marginTop: '4px',
+                      }}
+                    >
                       {selectedGame.videoUrl}
                     </small>
                   </div>
@@ -587,7 +620,7 @@ const Minigame = () => {
                     fontSize: '1.1rem',
                     fontWeight: 'bold',
                     marginBottom: '12px',
-                    color: '#212529',
+                    color: 'var(--cui-body-color)',
                   }}
                 >
                   태그
@@ -603,7 +636,7 @@ const Minigame = () => {
                       fontSize: '1.1rem',
                       fontWeight: 'bold',
                       marginBottom: '12px',
-                      color: '#212529',
+                      color: 'var(--cui-body-color)',
                       display: 'flex',
                       alignItems: 'center',
                       gap: '8px',
@@ -631,7 +664,7 @@ const Minigame = () => {
                           alignItems: 'start',
                           gap: '12px',
                           padding: '12px 16px',
-                          backgroundColor: '#e7f3ff',
+                          backgroundColor: 'var(--cui-info-bg-subtle)',
                           borderRadius: '8px',
                           borderLeft: '4px solid #0d6efd',
                         }}
@@ -653,7 +686,9 @@ const Minigame = () => {
                         >
                           {t.step || idx + 1}
                         </span>
-                        <span style={{ color: '#212529', lineHeight: '32px' }}>{t.description}</span>
+                        <span style={{ color: 'var(--cui-body-color)', lineHeight: '32px' }}>
+                          {t.description}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -668,7 +703,7 @@ const Minigame = () => {
                       fontSize: '1.1rem',
                       fontWeight: 'bold',
                       marginBottom: '12px',
-                      color: '#212529',
+                      color: 'var(--cui-body-color)',
                       display: 'flex',
                       alignItems: 'center',
                       gap: '8px',
@@ -696,12 +731,18 @@ const Minigame = () => {
                           alignItems: 'center',
                           gap: '12px',
                           padding: '12px 16px',
-                          backgroundColor: '#d1f4e0',
+                          backgroundColor: 'var(--cui-success-bg-subtle)',
                           borderRadius: '8px',
                           borderLeft: '4px solid #198754',
                         }}
                       >
-                        <span style={{ fontWeight: 'bold', color: '#212529', minWidth: '100px' }}>
+                        <span
+                          style={{
+                            fontWeight: 'bold',
+                            color: 'var(--cui-body-color)',
+                            minWidth: '100px',
+                          }}
+                        >
                           {c.keyName}
                         </span>
                         <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
@@ -736,7 +777,7 @@ const Minigame = () => {
                       fontSize: '1.1rem',
                       fontWeight: 'bold',
                       marginBottom: '12px',
-                      color: '#212529',
+                      color: 'var(--cui-body-color)',
                       display: 'flex',
                       alignItems: 'center',
                       gap: '8px',
@@ -761,12 +802,19 @@ const Minigame = () => {
                         key={idx}
                         style={{
                           padding: '16px',
-                          backgroundColor: '#f3e5f5',
+                          backgroundColor: 'var(--cui-primary-bg-subtle)',
                           borderRadius: '8px',
                           borderLeft: '4px solid #6f42c1',
                         }}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '12px',
+                            marginBottom: '8px',
+                          }}
+                        >
                           <span
                             style={{
                               display: 'inline-flex',
@@ -784,10 +832,16 @@ const Minigame = () => {
                             {phase.phaseNumber}
                           </span>
                           <div style={{ flex: 1 }}>
-                            <div style={{ fontWeight: 'bold', color: '#212529', marginBottom: '4px' }}>
+                            <div
+                              style={{
+                                fontWeight: 'bold',
+                                color: 'var(--cui-body-color)',
+                                marginBottom: '4px',
+                              }}
+                            >
                               {phase.description}
                             </div>
-                            <small style={{ color: '#6c757d' }}>
+                            <small style={{ color: 'var(--cui-secondary-color)' }}>
                               ⏱️ 지속시간: {phase.duration}초
                             </small>
                           </div>
@@ -806,7 +860,7 @@ const Minigame = () => {
                       fontSize: '1.1rem',
                       fontWeight: 'bold',
                       marginBottom: '12px',
-                      color: '#212529',
+                      color: 'var(--cui-body-color)',
                       display: 'flex',
                       alignItems: 'center',
                       gap: '8px',
@@ -839,7 +893,7 @@ const Minigame = () => {
                           key={key}
                           style={{
                             padding: '12px 16px',
-                            backgroundColor: '#fff3cd',
+                            backgroundColor: 'var(--cui-warning-bg-subtle)',
                             borderRadius: '8px',
                             borderLeft: '4px solid #fd7e14',
                             display: 'flex',
@@ -847,12 +901,30 @@ const Minigame = () => {
                             gap: '4px',
                           }}
                         >
-                          <span style={{ fontSize: '0.85rem', color: '#856404', fontWeight: '600' }}>
+                          <span
+                            style={{
+                              fontSize: '0.85rem',
+                              color: 'var(--cui-warning-text-emphasis)',
+                              fontWeight: '600',
+                            }}
+                          >
                             {key}
                           </span>
-                          <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#212529' }}>
+                          <span
+                            style={{
+                              fontSize: '1.2rem',
+                              fontWeight: 'bold',
+                              color: 'var(--cui-body-color)',
+                            }}
+                          >
                             {value}
-                            <span style={{ fontSize: '0.9rem', fontWeight: 'normal', color: '#6c757d' }}>
+                            <span
+                              style={{
+                                fontSize: '0.9rem',
+                                fontWeight: 'normal',
+                                color: 'var(--cui-secondary-color)',
+                              }}
+                            >
                               ms
                             </span>
                           </span>
@@ -870,7 +942,7 @@ const Minigame = () => {
                       fontSize: '1.1rem',
                       fontWeight: 'bold',
                       marginBottom: '12px',
-                      color: '#212529',
+                      color: 'var(--cui-body-color)',
                       display: 'flex',
                       alignItems: 'center',
                       gap: '8px',
@@ -891,7 +963,7 @@ const Minigame = () => {
                   </h5>
                   <pre
                     style={{
-                      backgroundColor: '#2d2d2d',
+                      backgroundColor: 'var(--cui-body-bg)',
                       color: '#f8f8f2',
                       padding: '16px',
                       borderRadius: '8px',
@@ -1395,9 +1467,7 @@ const Minigame = () => {
         <CModalHeader>
           <CModalTitle>미니게임 삭제</CModalTitle>
         </CModalHeader>
-        <CModalBody>
-          정말 &quot;{gameToDelete?.name}&quot; 게임을 삭제하시겠습니까?
-        </CModalBody>
+        <CModalBody>정말 &quot;{gameToDelete?.name}&quot; 게임을 삭제하시겠습니까?</CModalBody>
         <CModalFooter>
           <CButton color="secondary" onClick={() => setShowDeleteConfirm(false)}>
             취소
@@ -1416,7 +1486,13 @@ const Minigame = () => {
                 미니게임 관리 (총 {total}개)
               </h2>
               <div className="d-flex" style={{ gap: 8 }}>
-                <CButton color="secondary" variant="outline" size="sm" onClick={load} disabled={loading}>
+                <CButton
+                  color="secondary"
+                  variant="outline"
+                  size="sm"
+                  onClick={load}
+                  disabled={loading}
+                >
                   새로고침
                 </CButton>
                 <CButton color="primary" size="sm" onClick={handleCreateNew}>
