@@ -798,7 +798,7 @@ paths:
       - Avatars
       summary: 시청자 아바타 목록 전체 교체
       operationId: replaceViewerAvatars
-      description: data는 비어 있을 수 없다. order가 중복되면 461. 저장 실패는 546.
+      description: data는 1~8개(시청자 아바타 최대 8개)이며 목록 전체를 교체한다. 8개를 넘으면 462, order가 중복되면 461. 저장 실패는 546.
       security:
       - BearerAuth: []
       responses:
@@ -816,6 +816,8 @@ paths:
           $ref: '#/components/responses/Error443'
         '461':
           $ref: '#/components/responses/Error461'
+        '462':
+          $ref: '#/components/responses/Error462'
         '500':
           $ref: '#/components/responses/Error500'
         '546':
@@ -1808,6 +1810,7 @@ components:
           items:
             $ref: '#/components/schemas/ViewerAvatarInput'
           minItems: 1
+          maxItems: 8
       required:
       - data
   responses:
@@ -2075,6 +2078,17 @@ components:
             error:
               code: '461'
               message: Duplicate avatar order
+    Error462:
+      description: AvatarLimitExceeded (현재 구현의 사용자 정의 HTTP 상태). 시청자 아바타는 최대 8개
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: '462'
+            error:
+              code: '462'
+              message: Too many viewer avatars (max 8)
     Error540:
       description: BannerUpdateFailed (현재 구현의 사용자 정의 HTTP 상태)
       content:

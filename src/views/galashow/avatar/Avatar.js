@@ -21,6 +21,9 @@ import {
 } from '@coreui/react'
 import { getViewerAvatars, updateViewerAvatars } from 'src/api/modules/avatar'
 
+// API(PUT /viewer-avatars)도 8개 초과를 462로 거절한다.
+const MAX_AVATARS = 8
+
 const Avatar = () => {
   const [avatars, setAvatars] = useState([])
   const [originals, setOriginals] = useState([])
@@ -51,9 +54,31 @@ const Avatar = () => {
   }, [load])
 
   const onChange = (id, field, value) => {
-    setAvatars((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, [field]: value } : a)),
-    )
+    setAvatars((prev) => prev.map((a) => (a.id === id ? { ...a, [field]: value } : a)))
+  }
+
+  const addAvatar = () => {
+    setAvatars((prev) => {
+      if (prev.length >= MAX_AVATARS) return prev
+      const nextId = prev.reduce((max, a) => Math.max(max, a.id), 0) + 1
+      const nextOrder = prev.reduce((max, a) => Math.max(max, a.order), 0) + 1
+      return [...prev, { id: nextId, order: nextOrder, name: '', gifUrl: '' }]
+    })
+  }
+
+  const removeAvatar = (id) => {
+    setAvatars((prev) => prev.filter((a) => a.id !== id))
+  }
+
+  const validate = () => {
+    if (avatars.length === 0) return '아바타는 최소 1개 필요합니다.'
+    if (avatars.length > MAX_AVATARS)
+      return `아바타는 최대 ${MAX_AVATARS}개까지 등록할 수 있습니다.`
+    if (avatars.some((a) => !a.name.trim() || !a.gifUrl.trim()))
+      return '모든 아바타의 이름과 GIF URL을 입력하세요.'
+    const orders = avatars.map((a) => a.order)
+    if (new Set(orders).size !== orders.length) return '표시 순서가 중복되었습니다.'
+    return null
   }
 
   const isDirty = () => {
@@ -61,6 +86,11 @@ const Avatar = () => {
   }
 
   const saveAll = async () => {
+    const invalid = validate()
+    if (invalid) {
+      setError(invalid)
+      return
+    }
     try {
       setSaving(true)
       const ok = await updateViewerAvatars(avatars)
@@ -70,7 +100,14 @@ const Avatar = () => {
         setError('저장에 실패했습니다.')
       }
     } catch (e) {
-      setError('저장 중 오류가 발생했습니다.')
+      const status = e?.response?.status
+      setError(
+        status === 462
+          ? `아바타는 최대 ${MAX_AVATARS}개까지 등록할 수 있습니다.`
+          : status === 461
+            ? '표시 순서가 중복되었습니다.'
+            : '저장 중 오류가 발생했습니다.',
+      )
       console.error(e)
     } finally {
       setSaving(false)
@@ -125,9 +162,29 @@ const Avatar = () => {
           <CCardHeader>
             <div className="d-flex align-items-center justify-content-between" style={{ gap: 12 }}>
               <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', margin: 0 }}>
-                시청자 아바타 관리
+                시청자 아바타 관리{' '}
+                <small
+                  className="text-body-secondary"
+                  style={{ fontSize: '1rem', fontWeight: 'normal' }}
+                >
+                  ({avatars.length}/{MAX_AVATARS})
+                </small>
               </h2>
               <div className="d-flex" style={{ gap: 8 }}>
+                <CButton
+                  color="success"
+                  variant="outline"
+                  size="sm"
+                  onClick={addAvatar}
+                  disabled={loading || saving || avatars.length >= MAX_AVATARS}
+                  title={
+                    avatars.length >= MAX_AVATARS
+                      ? `최대 ${MAX_AVATARS}개까지 등록할 수 있습니다`
+                      : '아바타 추가'
+                  }
+                >
+                  아바타 추가
+                </CButton>
                 <CButton
                   color="secondary"
                   variant="outline"
@@ -182,80 +239,103 @@ const Avatar = () => {
                   <CTableHeaderCell scope="col" style={{ width: 150 }}>
                     미리보기
                   </CTableHeaderCell>
+                  <CTableHeaderCell scope="col" style={{ width: 80 }} />
                 </CTableRow>
               </CTableHead>
               <CTableBody>
-                {loading ? (
-                  Array.from({ length: 3 }, (_, i) => (
-                    <CTableRow key={`skeleton-${i}`}>
-                      <CTableDataCell className="text-muted">—</CTableDataCell>
-                      <CTableDataCell>
-                        <div className="placeholder-glow">
-                          <span className="placeholder col-12" style={{ height: 38, display: 'block' }} />
-                        </div>
-                      </CTableDataCell>
-                      <CTableDataCell>
-                        <div className="placeholder-glow">
-                          <span className="placeholder col-12" style={{ height: 38, display: 'block' }} />
-                        </div>
-                      </CTableDataCell>
-                      <CTableDataCell>
-                        <div className="placeholder-glow">
-                          <span className="placeholder col-12" style={{ height: 38, display: 'block' }} />
-                        </div>
-                      </CTableDataCell>
-                      <CTableDataCell className="text-center">
-                        <CSpinner size="sm" />
-                      </CTableDataCell>
-                    </CTableRow>
-                  ))
-                ) : (
-                  avatars.map((avatar) => (
-                    <CTableRow key={avatar.id}>
-                      <CTableDataCell>{avatar.id}</CTableDataCell>
-                      <CTableDataCell>
-                        <CFormInput
-                          type="number"
-                          value={avatar.order}
-                          onChange={(e) => onChange(avatar.id, 'order', parseInt(e.target.value) || 0)}
-                          disabled={saving}
-                        />
-                      </CTableDataCell>
-                      <CTableDataCell>
-                        <CFormInput
-                          value={avatar.name}
-                          onChange={(e) => onChange(avatar.id, 'name', e.target.value)}
-                          disabled={saving}
-                        />
-                      </CTableDataCell>
-                      <CTableDataCell>
-                        <CFormInput
-                          value={avatar.gifUrl}
-                          onChange={(e) => onChange(avatar.id, 'gifUrl', e.target.value)}
-                          disabled={saving}
-                        />
-                      </CTableDataCell>
-                      <CTableDataCell className="text-center">
-                        {avatar.gifUrl ? (
-                          <img
-                            src={avatar.gifUrl}
-                            alt={avatar.name}
-                            style={{
-                              maxWidth: '100px',
-                              maxHeight: '100px',
-                              objectFit: 'contain',
-                            }}
-                            onError={(e) => {
-                              e.target.style.display = 'none'
-                            }}
+                {loading
+                  ? Array.from({ length: 3 }, (_, i) => (
+                      <CTableRow key={`skeleton-${i}`}>
+                        <CTableDataCell className="text-muted">—</CTableDataCell>
+                        <CTableDataCell>
+                          <div className="placeholder-glow">
+                            <span
+                              className="placeholder col-12"
+                              style={{ height: 38, display: 'block' }}
+                            />
+                          </div>
+                        </CTableDataCell>
+                        <CTableDataCell>
+                          <div className="placeholder-glow">
+                            <span
+                              className="placeholder col-12"
+                              style={{ height: 38, display: 'block' }}
+                            />
+                          </div>
+                        </CTableDataCell>
+                        <CTableDataCell>
+                          <div className="placeholder-glow">
+                            <span
+                              className="placeholder col-12"
+                              style={{ height: 38, display: 'block' }}
+                            />
+                          </div>
+                        </CTableDataCell>
+                        <CTableDataCell className="text-center">
+                          <CSpinner size="sm" />
+                        </CTableDataCell>
+                        <CTableDataCell />
+                      </CTableRow>
+                    ))
+                  : avatars.map((avatar) => (
+                      <CTableRow key={avatar.id}>
+                        <CTableDataCell>{avatar.id}</CTableDataCell>
+                        <CTableDataCell>
+                          <CFormInput
+                            type="number"
+                            value={avatar.order}
+                            onChange={(e) =>
+                              onChange(avatar.id, 'order', parseInt(e.target.value) || 0)
+                            }
+                            disabled={saving}
                           />
-                        ) : (
-                          <span className="text-muted">미리보기 없음</span>
-                        )}
-                      </CTableDataCell>
-                    </CTableRow>
-                  ))
-                )}
+                        </CTableDataCell>
+                        <CTableDataCell>
+                          <CFormInput
+                            value={avatar.name}
+                            onChange={(e) => onChange(avatar.id, 'name', e.target.value)}
+                            disabled={saving}
+                          />
+                        </CTableDataCell>
+                        <CTableDataCell>
+                          <CFormInput
+                            value={avatar.gifUrl}
+                            onChange={(e) => onChange(avatar.id, 'gifUrl', e.target.value)}
+                            disabled={saving}
+                          />
+                        </CTableDataCell>
+                        <CTableDataCell className="text-center">
+                          {avatar.gifUrl ? (
+                            <img
+                              src={avatar.gifUrl}
+                              alt={avatar.name}
+                              style={{
+                                maxWidth: '100px',
+                                maxHeight: '100px',
+                                objectFit: 'contain',
+                              }}
+                              onError={(e) => {
+                                e.target.style.display = 'none'
+                              }}
+                            />
+                          ) : (
+                            <span className="text-muted">미리보기 없음</span>
+                          )}
+                        </CTableDataCell>
+                        <CTableDataCell className="text-center">
+                          <CButton
+                            color="danger"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => removeAvatar(avatar.id)}
+                            disabled={saving || avatars.length <= 1}
+                            title={avatars.length <= 1 ? '아바타는 최소 1개 필요합니다' : '삭제'}
+                          >
+                            삭제
+                          </CButton>
+                        </CTableDataCell>
+                      </CTableRow>
+                    ))}
               </CTableBody>
             </CTable>
           </CCardBody>
