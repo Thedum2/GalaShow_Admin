@@ -1,11 +1,12 @@
 import React from 'react'
 import { useLocation } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
-import { CContainer, CHeader, CHeaderToggler } from '@coreui/react'
+import { CButton, CContainer, CHeader, CHeaderToggler } from '@coreui/react'
 import CIcon from '@coreui/icons-react'
-import { cilMenu, cilChevronRight, cilUser } from '@coreui/icons'
+import { cilMenu, cilChevronRight, cilUser, cilAccountLogout } from '@coreui/icons'
 import EnvironmentBadge from './EnvironmentBadge'
 import routes from '../routes'
+import { useAuth } from 'src/auth/AuthContext'
 
 const pageNames = {
   '/dashboard': '대시보드',
@@ -22,6 +23,7 @@ const AppHeader = () => {
   const dispatch = useDispatch()
   const sidebarShow = useSelector((state) => state.sidebarShow)
   const { pathname } = useLocation()
+  const { logout } = useAuth()
   const pageName =
     pageNames[pathname] || routes.find((route) => route.path === pathname)?.name || '워크스페이스'
 
@@ -48,6 +50,18 @@ const AppHeader = () => {
           <span className="header-avatar" aria-label="관리자">
             <CIcon icon={cilUser} />
           </span>
+          <CButton
+            color="secondary"
+            variant="outline"
+            size="sm"
+            className="d-inline-flex align-items-center"
+            style={{ gap: 6 }}
+            onClick={logout}
+            title="로그아웃"
+          >
+            <CIcon icon={cilAccountLogout} />
+            로그아웃
+          </CButton>
         </div>
       </CContainer>
     </CHeader>
