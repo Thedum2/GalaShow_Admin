@@ -1440,8 +1440,8 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/MinigameControl'
-      description: POST/PUT 공통 필드. PUT은 PATCH가 아니며 생략된 목록/문자열에 DTO 기본값이 적용될 수 있다. phaseData/gameData 시간·구조는 서버가
-        검증하지 않는다.
+      description: POST/PUT 공통 필드. PUT은 PATCH가 아니며 생략된 목록/문자열에 DTO 기본값이 적용될 수 있다. phaseData는 8단계(READY·SETUP·PRESENT·INPUT·WAIT·EXECUTE·REVEAL·CLEANUP)
+        값이 0 이상의 정수(ms) 또는 -1(무한 대기, 게임이 완료 조건을 채울 때까지 기다림)이어야 하며 어기면 400 BadRequest를 반환한다(그 밖의 키는 검사하지 않음). gameData 구조는 서버가 검증하지 않는다.
       required:
       - name
     Minigame:

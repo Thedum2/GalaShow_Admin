@@ -53,6 +53,12 @@ const TAG_LABELS = {
   winCondition: '승리조건',
 }
 
+/** RGF 8단계 (Unity GamePhase와 같음) */
+const PHASE_KEYS = ['READY', 'SETUP', 'PRESENT', 'INPUT', 'WAIT', 'EXECUTE', 'REVEAL', 'CLEANUP']
+
+/** phase_data 무한 대기 값: 시간 제한 없이 게임이 완료 조건을 채울 때까지 기다린다 */
+const INFINITE_PHASE = -1
+
 const Minigame = () => {
   const [games, setGames] = useState([])
   const [total, setTotal] = useState(0)
@@ -917,16 +923,18 @@ const Minigame = () => {
                               color: 'var(--cui-body-color)',
                             }}
                           >
-                            {value}
-                            <span
-                              style={{
-                                fontSize: '0.9rem',
-                                fontWeight: 'normal',
-                                color: 'var(--cui-secondary-color)',
-                              }}
-                            >
-                              ms
-                            </span>
+                            {value === INFINITE_PHASE ? '무한 대기' : value}
+                            {value !== INFINITE_PHASE && (
+                              <span
+                                style={{
+                                  fontSize: '0.9rem',
+                                  fontWeight: 'normal',
+                                  color: 'var(--cui-secondary-color)',
+                                }}
+                              >
+                                ms
+                              </span>
+                            )}
                           </span>
                         </div>
                       ))}
@@ -1306,126 +1314,53 @@ const Minigame = () => {
 
           {/* PhaseData */}
           <h5 className="mb-3">PhaseData (페이즈 타이밍 - ms 단위)</h5>
-          <CRow className="mb-2">
-            <CFormLabel className="col-sm-3 col-form-label">READY</CFormLabel>
-            <CCol sm={9}>
-              <CFormInput
-                type="number"
-                value={formData.phaseData.READY}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    phaseData: { ...formData.phaseData, READY: parseInt(e.target.value) || 0 },
-                  })
-                }
-              />
-            </CCol>
-          </CRow>
-          <CRow className="mb-2">
-            <CFormLabel className="col-sm-3 col-form-label">SETUP</CFormLabel>
-            <CCol sm={9}>
-              <CFormInput
-                type="number"
-                value={formData.phaseData.SETUP}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    phaseData: { ...formData.phaseData, SETUP: parseInt(e.target.value) || 0 },
-                  })
-                }
-              />
-            </CCol>
-          </CRow>
-          <CRow className="mb-2">
-            <CFormLabel className="col-sm-3 col-form-label">PRESENT</CFormLabel>
-            <CCol sm={9}>
-              <CFormInput
-                type="number"
-                value={formData.phaseData.PRESENT}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    phaseData: { ...formData.phaseData, PRESENT: parseInt(e.target.value) || 0 },
-                  })
-                }
-              />
-            </CCol>
-          </CRow>
-          <CRow className="mb-2">
-            <CFormLabel className="col-sm-3 col-form-label">INPUT</CFormLabel>
-            <CCol sm={9}>
-              <CFormInput
-                type="number"
-                value={formData.phaseData.INPUT}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    phaseData: { ...formData.phaseData, INPUT: parseInt(e.target.value) || 0 },
-                  })
-                }
-              />
-            </CCol>
-          </CRow>
-          <CRow className="mb-2">
-            <CFormLabel className="col-sm-3 col-form-label">WAIT</CFormLabel>
-            <CCol sm={9}>
-              <CFormInput
-                type="number"
-                value={formData.phaseData.WAIT}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    phaseData: { ...formData.phaseData, WAIT: parseInt(e.target.value) || 0 },
-                  })
-                }
-              />
-            </CCol>
-          </CRow>
-          <CRow className="mb-2">
-            <CFormLabel className="col-sm-3 col-form-label">EXECUTE</CFormLabel>
-            <CCol sm={9}>
-              <CFormInput
-                type="number"
-                value={formData.phaseData.EXECUTE}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    phaseData: { ...formData.phaseData, EXECUTE: parseInt(e.target.value) || 0 },
-                  })
-                }
-              />
-            </CCol>
-          </CRow>
-          <CRow className="mb-2">
-            <CFormLabel className="col-sm-3 col-form-label">REVEAL</CFormLabel>
-            <CCol sm={9}>
-              <CFormInput
-                type="number"
-                value={formData.phaseData.REVEAL}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    phaseData: { ...formData.phaseData, REVEAL: parseInt(e.target.value) || 0 },
-                  })
-                }
-              />
-            </CCol>
-          </CRow>
-          <CRow className="mb-2">
-            <CFormLabel className="col-sm-3 col-form-label">CLEANUP</CFormLabel>
-            <CCol sm={9}>
-              <CFormInput
-                type="number"
-                value={formData.phaseData.CLEANUP}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    phaseData: { ...formData.phaseData, CLEANUP: parseInt(e.target.value) || 0 },
-                  })
-                }
-              />
-            </CCol>
-          </CRow>
+          <p className="text-body-secondary small mb-3">
+            무한 대기: 시간 제한 없이 게임이 끝났다고 알릴 때까지 기다립니다(값 -1). 예) 트롤리
+            딜레마의 WAIT는 호스트가 선택할 때까지 기다립니다.
+          </p>
+          {PHASE_KEYS.map((phase) => {
+            const value = formData.phaseData[phase]
+            const infinite = value === INFINITE_PHASE
+            return (
+              <CRow className="mb-2 align-items-center" key={phase}>
+                <CFormLabel className="col-sm-3 col-form-label">{phase}</CFormLabel>
+                <CCol sm={6}>
+                  <CFormInput
+                    type="number"
+                    min={0}
+                    value={infinite ? '' : value}
+                    placeholder={infinite ? '무한 대기' : 'ms'}
+                    disabled={infinite}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        phaseData: {
+                          ...formData.phaseData,
+                          [phase]: Math.max(0, parseInt(e.target.value) || 0),
+                        },
+                      })
+                    }
+                  />
+                </CCol>
+                <CCol sm={3}>
+                  <CFormCheck
+                    id={`phase-infinite-${phase}`}
+                    label="무한 대기"
+                    checked={infinite}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        phaseData: {
+                          ...formData.phaseData,
+                          [phase]: e.target.checked ? INFINITE_PHASE : 0,
+                        },
+                      })
+                    }
+                  />
+                </CCol>
+              </CRow>
+            )
+          })}
 
           <hr className="my-4" />
 
